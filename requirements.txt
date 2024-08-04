@@ -19,3 +19,4 @@ uvicorn[standard]==0.29.0
 # Email
 django-anymail[mailgun]==10.3
 whitenoise==6.7.0
+django-fernet-fields@git+https://github.com/badri/django-fernet-fields.git@django-4.2

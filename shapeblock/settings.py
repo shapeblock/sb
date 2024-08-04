@@ -63,7 +63,6 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -262,4 +261,7 @@ else:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
-CLUSTER_DOMAIN = env("CLUSTER_DOMAIN", "example.com")
+CLUSTER_DOMAIN = env("CLUSTER_DOMAIN", default="example.com")
+
+
+FERNET_KEYS = env.list('FERNET_KEYS')

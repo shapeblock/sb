@@ -71,6 +71,7 @@ secretEnvs:
   MAILGUN_API_KEY: "xxx"
   KUBE_TOKEN: "aaa"
   GH_TOKEN: "zzz"
+  FERNET_KEYS: "xxx==,yyy=="
 
 services:
   django:

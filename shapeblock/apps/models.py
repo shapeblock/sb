@@ -13,8 +13,6 @@ from shapeblock.utils.models import BaseModel, OwnedModel
 from shapeblock.projects.models import Project
 from .git import GIT_REGEX
 
-from allauth.socialaccount.models import SocialToken
-
 from fernet_fields import EncryptedCharField
 
 
@@ -90,26 +88,11 @@ class App(BaseModel, OwnedModel):
         return f"https://{self.project.name}-{self.name}.{settings.CLUSTER_DOMAIN}"
 
 
-    def get_github_user_token(self, user=None):
-        user = user if user else self.user
-        try:
-            token_object = SocialToken.objects.get(account__user=user, account__provider="github")
-        except SocialToken.DoesNotExist:
-            return None
-        return token_object.token
-
     def get_repo_details(self):
         match = re.match(GIT_REGEX, self.repo).groupdict()
         full_name = f"{match['org']}/{match['repo']}"
         protocol = match["protocol"]
         return protocol, full_name
-
-    def get_user_github_token(self):
-        try:
-            token_object = SocialToken.objects.get(account__user=self.user, account__provider="github")
-        except SocialToken.DoesNotExist:
-            return None
-        return token_object.token
 
     def get_sb_yml(self) -> Dict:
         """
