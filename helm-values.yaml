@@ -1,0 +1,99 @@
+defaultImage: ghcr.io/shapeblock/sb/backend
+defaultImageTag: 2024-04-20.3
+defaultImagePullPolicy: Always
+deployments:
+  django:
+    initContainers:
+    - name: migrate
+      command: ['python', 'manage.py', 'migrate']
+      envConfigmaps:
+      - envs
+      envSecrets:
+      - secret-envs
+      resources:
+        limits:
+          cpu: "500m"
+          memory: "512Mi"
+        requests:
+          cpu: 5m
+          memory: 128M
+
+    containers:
+    - envConfigmaps:
+      - envs
+      envSecrets:
+      - secret-envs
+      name: django
+      command: ['uvicorn', '--host', '0.0.0.0', '--port', '8000', '--workers', '1', 'shapeblock.asgi:application']
+      ports:
+      - containerPort: 8000
+        name: app
+      resources:
+        limits:
+          cpu: "1"
+          memory: 2Gi
+        requests:
+          cpu: 5m
+          memory: 128M
+    podLabels:
+      app: shapeblock
+      release: backend
+    replicas: 1
+enabled: true
+envs:
+  DEBUG: "False"
+  DATABASE_URL: postgres://shapeblock:xyTYDRE20blju6Qrywidumlt@database-postgresql/shapeblock
+  POSTGRES_DB: shapeblock
+  POSTGRES_USER: shapeblock
+  POSTGRES_PASSWORD: xyTYDRE20blju6Qrywidumlt
+  DATABASE_HOST: database-postgresql
+  REDIS_HOST: redis-master
+  ADMIN_URL: "admin-sb-4891/"
+  SB_TLD: "shapeblockapp.com"
+  SB_URL: "https://api.shapeblock.com"
+  MAILGUN_DOMAIN: "mg.shapeblock.com"
+  ALLOWED_HOSTS: api.shapeblock.com
+  KUBE_SERVER: "https://804a7c98-05e5-4e25-9543-b6f802874444.k8s.ondigitalocean.com"
+  KUBE_NAMESPACE: "k3s-tasks"
+  DEFAULT_FROM_EMAIL: lakshmi@shapeblock.com
+
+generic:
+  extraImagePullSecrets:
+  - name: registry-creds
+  labels:
+    app: shapeblock
+    release: backend
+  usePredefinedAffinity: false
+
+releasePrefix: production
+secretEnvs:
+  SECRET_KEY: "YYY"
+  MAILGUN_API_KEY: "xxx"
+  KUBE_TOKEN: "aaa"
+  GH_TOKEN: "zzz"
+
+services:
+  django:
+    extraSelectorLabels:
+      app: shapeblock
+      release: backend
+    ports:
+    - port: 8000
+    type: ClusterIP
+
+ingresses:
+  api.shapeblock.com:
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: 50m
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    certManager:
+      originalIssuerName: letsencrypt-prod
+      issuerType: cluster-issuer
+    hosts:
+    - paths:
+      - serviceName: django
+        servicePort: 8000
+    ingressClassName: nginx
+    name: backend

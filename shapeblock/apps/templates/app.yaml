@@ -1,0 +1,275 @@
+apiVersion: dev.shapeblock.com/v1alpha1
+kind: Application
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+  labels:
+    shapeblock.com/app-uuid: {{ app_uuid }}
+    shapeblock.com/deployment-uuid: {{ deployment_uuid }}
+    shapeblock.com/deployment-type: {{ deployment_type }}
+spec:
+  # Add fields here
+  stack: {{ type }}
+  tag: registry.{{ cluster_domain }}/{{ namespace }}/{{ name }}
+  git:
+    repo: {{ git.url }}
+    ref: "{{ git.revision }}"
+    {% if git.sub_path %}
+    subPath: "{{git.sub_path }}"
+    {% endif %}
+  chart:
+    repo: https://shapeblock.github.io
+    name: shapeblock
+    version: "{{ chart_version }}"
+    build:
+      {% for build_var in build_vars %}
+      - name: "{{ build_var.key }}"
+        value: "{{ build_var.value }}"
+      {% endfor %}
+    values:
+      universal-chart:
+        enabled: true
+
+        releasePrefix: "{{ name }}"
+
+        envs:
+          PORT: 8080
+          {% spaceless %}
+          {% for env_var in env_vars %}{{ env_var.key }}: "{{ env_var.value }}"
+          {% endfor %}
+          {% endspaceless %}
+
+        {% if secrets %}
+        secretEnvs:
+          {% spaceless %}
+          {% for secret in secrets %}{{ secret.key }}: "{{ secret.value }}"
+          {% endfor %}
+          {% endspaceless %}
+        {% endif %}
+
+        generic:
+          labels:
+            app: {{ type }}
+            release: {{ name }}
+            appUuid: {{ app_uuid }}
+            deployUuid: {{ deployment_uuid }}
+          usePredefinedAffinity: false
+          extraImagePullSecrets:
+          - name: registry-creds
+
+        defaultImage: registry.{{ cluster_domain }}/{{ namespace }}/{{ name }}
+        defaultImageTag: AUTO
+
+
+        deployments:
+          {{ type }}:
+            podLabels:
+              app: {{ type }}
+              release: {{ name }}
+              appUuid: {{ app_uuid }}
+              deployment: {{ type }}
+              deployUuid: {{ deployment_uuid }}
+            replicas: {{ replicas }}
+            {# init containers which wait for services to be up first #}
+            {% if init_processes %}
+            initContainers:
+            {# inti containers for any predeploy step #}
+            {% for init_process in init_processes %}
+            - name: {{ init_process.key }}
+              {% if secrets %}
+              envSecrets:
+              - secret-envs
+              {% endif %}
+              envConfigmaps:
+              - envs
+              command: ["{{ init_process.key }}"]
+              {% if volumes %}
+              volumeMounts:
+              {% for volume in volumes %}
+              - name: {{ volume.name }}
+                mountPath: {{ volume.mount_path }}
+              {% endfor %}
+              {% endif %}
+              resources:
+                limits:
+                  cpu: "{{ init_process.cpu }}"
+                  memory: "{{ init_process.memory }}"
+                requests:
+                  cpu: 5m
+                  memory: 128M
+            {% endfor %}
+
+            {% endif %}
+            containers:
+            - name: {{ type }}
+              {% if secrets %}
+              envSecrets:
+              - secret-envs
+              {% endif %}
+              envConfigmaps:
+              - envs
+              {% if volumes %}
+              volumeMounts:
+              {% for volume in volumes %}
+              - name: {{ volume.name }}
+                mountPath: {{ volume.mount_path }}
+              {% endfor %}
+              {% endif %}
+              ports:
+                - containerPort: 8080
+                  name: app
+              resources:
+                limits:
+                  cpu: "{{ resources.cpu|default:"1" }}"
+                  memory: "{{ resources.memory|default:"2Gi" }}"
+                requests:
+                  cpu: 5m
+                  memory: 128M
+              {% if has_liveness_probe %}
+              livenessProbe:
+                tcpSocket:
+                  port: 8080
+              {% endif %}
+            {% if volumes %}
+            volumes:
+              {% for volume in volumes %}
+              - name: {{ volume.name }}
+                type: pvc
+              {% endfor %}
+            {% endif %}
+          {% spaceless %}
+
+          {# workers #}
+          {% for worker in workers %}
+          {{ worker.key }}:
+            podLabels:
+              app: {{ type }}
+              release: {{ name }}
+              appUuid: {{ app_uuid }}
+              deployUuid: {{ deployment_uuid }}
+              worker: {{ worker_key }}
+            replicas: 1
+            containers:
+            - name: {{ worker.key }}
+              {% if secrets %}
+              envSecrets:
+              - secret-envs
+              {% endif %}
+              envConfigmaps:
+              - envs
+              command: ["{{ worker.key }}"]
+              {% if volumes %}
+              volumeMounts:
+              {% for volume in volumes %}
+              - name: {{ volume.name }}
+                mountPath: {{ volume.mount_path }}
+              {% endfor %}
+              {% endif %}
+              resources:
+                limits:
+                  cpu: "{{ worker.cpu }}"
+                  memory: "{{ worker.memory }}"
+                requests:
+                  cpu: 5m
+                  memory: 128M
+            {% if volumes %}
+            volumes:
+              {% for volume in volumes %}
+              - name: {{ volume.name }}
+                type: pvc
+              {% endfor %}
+            {% endif %}
+          {% endfor %}
+          {% endspaceless %}
+
+        services:
+          {{ type }}:
+            type: "NodePort"
+            ports:
+            - port: 8080
+            extraSelectorLabels:
+              app: {{ type }}
+              release: {{ name }}
+              appUuid: {{ app_uuid }}
+              deployment: {{ type }}
+
+        ingresses:
+          {{ namespace }}-{{ name }}.{{ cluster_domain }}:
+            name: {{ namespace }}
+            ingressClassName: nginx
+            annotations:
+              nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+              nginx.ingress.kubernetes.io/ssl-redirect: "true"
+            certManager:
+              issuerType: cluster-issuer
+              issuerName: letsencrypt-prod
+            hosts:
+            - paths:
+              - serviceName: {{ type }}
+                servicePort: 8080
+          {% for custom_domain in custom_domains %}
+          {{ custom_domain.domain }}:
+            name: {{ custom_domain.domain }}
+            ingressClassName: nginx
+            annotations:
+              nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+              nginx.ingress.kubernetes.io/ssl-redirect: "true"
+            certManager:
+              issuerType: cluster-issuer
+              issuerName: letsencrypt-prod
+            hosts:
+            - paths:
+              - serviceName: {{ type }}
+                servicePort: 8080
+          {% endfor %}
+
+        {% if volumes %}
+        pvcs:
+          {% for volume in volumes %}
+          {{ volume.name }}:
+            storageClassName: nfs
+            accessModes:
+            - ReadWriteMany
+            size: {{ volume.size }}
+          {% endfor %}
+        {% endif %}
+        {% if post_deploy %}
+        hooks:
+          post-release:
+            kind: "post-install,post-upgrade"
+            backoffLimit: 0
+            weight: "-5"
+            containers:
+            - name: post-release
+              envSecrets:
+              - secret-envs
+              envConfigmaps:
+              - envs
+              {% if mounts.items %}
+              volumeMounts:
+              {% spaceless %}
+              {% for key,mount in mounts.items %}- name: {{ key }}
+                mountPath: {{ mount.mountPath }}{% endfor %}
+              {% endspaceless %}
+              {% endif %}
+              ports:
+                - containerPort: 8080
+                  name: app
+              resources:
+                limits:
+                  cpu: 1000m
+                  memory: 256M
+                requests:
+                  cpu: 5m
+                  memory: 128M
+              command: ["launcher", "/bin/bash", "-c"]
+              args:
+              - if [ -f /workspace/post-deploy.sh ]; then ./post-deploy.sh; else echo "No post-deploy.sh script found."; fi
+            {% if volumes %}
+            volumes:
+              {% spaceless %}
+              {% for volume in volumes %}- name: {{ volume.name }}
+                type: pvc{% endfor %}
+              {% endspaceless %}
+            {% endif %}
+      {% endif %}

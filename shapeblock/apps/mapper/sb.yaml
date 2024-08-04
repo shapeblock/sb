@@ -1,0 +1,81 @@
+name: 'test-123'
+type: 'php'
+version: '8.1'
+
+docroot: web
+
+envs:  
+  FOO: bar
+  CONFIG_VARS: '{"test":"hello world"}'
+
+secrets:
+  - API_KEY
+  - APP_SALT
+  
+mounts:
+  upload-data:
+    mountPath: web/sites/default/files
+    size: 2Gi
+    backup: false
+
+# preserve static files
+keep:
+  - templates/*
+  - assets/*
+
+services:
+  - db1:
+      type: 'mysql'
+      version: '10'
+      size: 2Gi
+      backup: false
+  
+resources:
+  cpu: 10m
+  memory: 256Mi
+    
+domains:
+  - www.example.com
+  - hello.world.com
+
+workers:
+  celery:
+    resources:
+      cpu: 10m
+      memory: 256Mi
+    mounts:
+      name: upload-data
+      mountPath: web/sites/default/files
+      size: 2Gi
+      backup: false
+    envs:
+      BAR: baz
+    secrets:
+      - EXTERNAL_KEY
+      
+cron:
+  reports:
+    spec: 'H * * * *'
+    timeout: 3600
+    resources:
+      cpu: 10m
+      memory: 256Mi
+    mounts:
+      name: upload-data
+      mountPath: web/sites/default/files
+      size: 2Gi
+      backup: false
+    envs:
+      BAR: baz
+    secrets:
+      - EXTERNAL_KEY
+  
+deploy: |
+  set -x -e
+  curl -s https://get.symfony.com/cloud/configurator | bash  
+  
+post_deploy: |
+  set -x -e
+  curl -s https://get.symfony.com/cloud/configurator | bash  
+
+# autoscale:

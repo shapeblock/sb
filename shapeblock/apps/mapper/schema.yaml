@@ -1,0 +1,89 @@
+type: object
+properties:
+  build_vars:
+    type: object
+    additionalProperties:
+      type: string
+  env_vars:
+    type: object
+    additionalProperties:
+      type: string
+  secrets:
+    type: array
+    items:
+      type: string
+  volumes:
+    type: object
+    additionalProperties:
+      type: object
+      properties:
+        name:
+          type: string
+        mount_path:
+          type: string
+        size:
+          type: integer
+        backup:
+          type: boolean
+    services:
+    type: object
+    additionalProperties:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [mysql, postgres, mongodb, redis]
+        attach_as:
+          type: string
+          enum: [url, separate_variables]
+  resources:
+    type: object
+    properties:
+      cpu:
+        type: string
+      memory:
+        type: string
+
+  init:
+    type: object
+    additionalProperties:
+      type: object
+      properties:
+          resources:
+            type: object
+            properties:
+              cpu:
+                type: string
+              memory:
+                type: string
+
+  workers:
+    type: object
+    additionalProperties:
+      type: object
+      properties:
+          resources:
+            type: object
+            properties:
+              cpu:
+                type: string
+              memory:
+                type: string
+  cron:
+    type: object
+    additionalProperties:
+      type: object
+      properties:
+        spec:
+          type: string
+        timeout:
+          type: integer
+        resources:
+          type: object
+          properties:
+            cpu:
+              type: string
+            memory:
+              type: string

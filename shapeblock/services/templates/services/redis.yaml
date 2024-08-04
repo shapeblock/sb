@@ -1,0 +1,28 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+  labels:
+    shapeblock.com/service-uuid: {{ service_uuid }}
+spec:
+  chart:
+    spec:
+      chart: redis
+      interval: 1m
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+        namespace: flux
+      version: 18.6.1
+  install:
+    disableWait: false
+    disableWaitForJobs: false
+  interval: 5m
+  values:
+    architecture: standalone
+    auth:
+      password: shapeblock
+    master:
+      persistence:
+        size: 2Gi

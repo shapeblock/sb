@@ -1,0 +1,33 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: {{ name }}
+  namespace: {{ namespace }}
+  labels:
+    shapeblock.com/service-uuid: {{ service_uuid }}
+spec:
+  chart:
+    spec:
+      chart: mongodb
+      interval: 1m
+      sourceRef:
+        kind: HelmRepository
+        name: bitnami
+        namespace: flux
+      version: 14.4.9
+  install:
+    disableWait: false
+    disableWaitForJobs: false
+  interval: 5m
+  values:
+    auth:
+      rootUser: mongoadmin
+      rootPassword: mongoadmin
+      usernames: ['shapeblock']
+      passwords: ['shapeblock']
+      databases: ['shapeblock']
+    architecture: standalone
+    useStatefulSet: true
+    primary:
+      persistence:
+        size: 2Gi
