@@ -14,7 +14,7 @@ from pathlib import Path
 
 import os
 import environ
-from datetime import timedelta
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent
@@ -241,13 +241,6 @@ if DEBUG:
     # https://docs.djangoproject.com/en/dev/ref/settings/#email-port
     EMAIL_PORT = 1025
 else:
-    # use in production
-    EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
-    ANYMAIL = {
-        "MAILGUN_API_KEY": env("MAILGUN_API_KEY"),
-        "MAILGUN_SENDER_DOMAIN": env("MAILGUN_DOMAIN"),
-        "MAILGUN_API_URL": env("MAILGUN_API_URL", default="https://api.mailgun.net/v3"),
-    }
     ACCOUNT_DEFAULT_HTTP_PROTOCOL='https'
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
