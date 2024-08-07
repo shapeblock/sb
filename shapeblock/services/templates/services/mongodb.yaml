@@ -13,7 +13,7 @@ spec:
       sourceRef:
         kind: HelmRepository
         name: bitnami
-        namespace: flux
+        namespace: shapeblock
       version: 14.4.9
   install:
     disableWait: false

@@ -48,14 +48,8 @@ envs:
   POSTGRES_PASSWORD: xyTYDRE20blju6Qrywidumlt
   DATABASE_HOST: database-postgresql
   REDIS_HOST: redis-master
-  ADMIN_URL: "admin-sb-4891/"
-  SB_TLD: "shapeblockapp.com"
-  SB_URL: "https://api.shapeblock.com"
-  MAILGUN_DOMAIN: "mg.shapeblock.com"
-  ALLOWED_HOSTS: api.shapeblock.com
-  KUBE_SERVER: "https://804a7c98-05e5-4e25-9543-b6f802874444.k8s.ondigitalocean.com"
-  KUBE_NAMESPACE: "k3s-tasks"
-  DEFAULT_FROM_EMAIL: lakshmi@shapeblock.com
+  CLUSTER_DOMAIN: "example.com"
+  ALLOWED_HOSTS: "*"
 
 generic:
   extraImagePullSecrets:
@@ -68,8 +62,6 @@ generic:
 releasePrefix: production
 secretEnvs:
   SECRET_KEY: "YYY"
-  MAILGUN_API_KEY: "xxx"
-  KUBE_TOKEN: "aaa"
   GH_TOKEN: "zzz"
   FERNET_KEYS: "xxx==,yyy=="
 
