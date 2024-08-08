@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "shapeblock.apps.apps.AppsConfig",
     "shapeblock.deployments.apps.DeploymentsConfig",
     "shapeblock.services.apps.ServicesConfig",
+    "shapeblock.utils.apps.UtilsConfig",
 ]
 
 MIDDLEWARE = [
