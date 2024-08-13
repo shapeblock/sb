@@ -27,7 +27,7 @@ def run_setup_project(project: Project):
         "project_name": project.name,
         "project_description": project.description,
     }
-    create_project = render_to_string("projects/project.yaml", data)
+    create_project = render_to_string("project.yaml", data)
     payload = yaml.load(create_project, Loader=yaml.FullLoader)
     response = api.create_cluster_custom_object(
         group="dev.shapeblock.com",

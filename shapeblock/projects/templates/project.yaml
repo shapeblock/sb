@@ -1,0 +1,9 @@
+apiVersion: dev.shapeblock.com/v1alpha1
+kind: Project
+metadata:
+  name: {{ project_name }}
+  labels:
+    shapeblock.com/project-uuid: {{ project_uuid }}
+spec:
+  name: {{ project_name }}
+  description: {{ project_description }}
