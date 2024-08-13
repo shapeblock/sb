@@ -94,6 +94,10 @@ class App(BaseModel, OwnedModel):
         protocol = match["protocol"]
         return protocol, full_name
 
+    def get_user_github_token(self):
+        #TODO: get user's github token
+        return None
+
     def get_sb_yml(self) -> Dict:
         """
         Fetch the file `.sb.yml` or `.sb.yaml` from the top level folder in the git repo.
