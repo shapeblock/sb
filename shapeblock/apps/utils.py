@@ -188,7 +188,7 @@ contexts:
 current-context: external-cluster
 users:
 - name: default
-    user:
-      token: {token}
+  user:
+    token: {token}
     """
     return kubeconfig
