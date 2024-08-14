@@ -169,7 +169,7 @@ def get_kubeconfig():
     with open('/var/run/secrets/kubernetes.io/serviceaccount/token', 'r') as token_file:
         token = token_file.read()
 
-    external_kube_api_url = f"https://{settings.CONTROL_PLANE_IP}:6443"
+    external_kube_api_url = settings.CONTROL_PLANE_IP
 
     base64_ca_crt = base64.b64encode(ca_crt.encode('utf-8')).decode('utf-8')
     kubeconfig = f"""
