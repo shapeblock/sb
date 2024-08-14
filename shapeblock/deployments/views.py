@@ -113,3 +113,17 @@ class UpdateDeploymentView(View):
             {},
             status=200,
         )
+
+class PodInfoView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, deployment_uuid, *args, **kwargs):
+        deployment = get_object_or_404(Deployment, uuid=deployment_uuid)
+        kubeconfig_bytes = base64.b64encode(deployment.app.project.cluster.kubeconfig.encode('utf-8'))
+        response_data = {
+            'name': deployment.pod,
+            'kubeconfig': kubeconfig_bytes.decode('utf-8'),
+            'namespace': deployment.app.project.name
+        }
+        logger.debug(response_data)
+        return Response(response_data)

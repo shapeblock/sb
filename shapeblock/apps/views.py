@@ -213,6 +213,22 @@ class VolumesAPIView(APIView):
                     name=name
                 )
 
+class ShellInfoView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, app_uuid, *args, **kwargs):
+        app = get_object_or_404(App, uuid=app_uuid)
+        pod_name = get_app_pod(app)
+        kubeconfig_bytes = base64.b64encode(app.project.cluster.kubeconfig.encode('utf-8'))
+        response_data = {
+            'name': pod_name,
+            'kubeconfig': kubeconfig_bytes.decode('utf-8'),
+            'namespace':  app.project.name
+        }
+        # logger.info(response_data)
+
+        return Response(response_data)
+
 class CustomDomainView(APIView):
     permission_classes = [IsAuthenticated]
 

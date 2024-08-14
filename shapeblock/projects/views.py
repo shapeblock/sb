@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from .models import Project
 from .serializers import ProjectSerializer, ProjectReadSerializer
 from rest_framework.permissions import IsAuthenticated
-from .kubernetes import run_setup_project
+from .kubernetes import run_setup_project, run_delete_project
 from rest_framework.decorators import action
 from shapeblock.services.serializers import ServiceSerializer
 from rest_framework.views import APIView
@@ -58,8 +58,9 @@ class ProjectViewSet(viewsets.GenericViewSet):
         return Response(serializer.data)
 
     def destroy(self, request, uuid=None, *args, **kwargs):
-        provider = self.get_queryset().get(uuid=uuid)
-        provider.delete()
+        project = Project.objects.get(uuid=uuid, user=request.user)
+        run_delete_project(project)
+        project.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
