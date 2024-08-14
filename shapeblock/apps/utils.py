@@ -177,14 +177,14 @@ apiVersion: v1
 kind: Config
 clusters:
 - cluster:
-    certificate-authority: {base64_ca_crt}
+    certificate-authority-data: {base64_ca_crt}
     server: {external_kube_api_url}
-    name: external-cluster
+  name: external-cluster
 contexts:
 - context:
     cluster: external-cluster
     user: default
-    name: external-cluster
+  name: external-cluster
 current-context: external-cluster
 users:
 - name: default
