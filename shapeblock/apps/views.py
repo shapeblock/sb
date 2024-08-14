@@ -11,6 +11,8 @@ from .serializers import AppSerializer, EnvVarSerializer, BuildVarSerializer, Se
 from rest_framework.permissions import IsAuthenticated
 from .kubernetes import delete_app_task
 from .kubernetes import delete_app_task, get_app_pod
+from .utils import get_kubeconfig
+
 logger = logging.getLogger("django")
 
 class AppViewSet(viewsets.GenericViewSet):
@@ -219,14 +221,13 @@ class ShellInfoView(APIView):
     def get(self, request, app_uuid, *args, **kwargs):
         app = get_object_or_404(App, uuid=app_uuid)
         pod_name = get_app_pod(app)
-        kubeconfig_bytes = base64.b64encode(app.project.cluster.kubeconfig.encode('utf-8'))
+        kubeconfig = get_kubeconfig()
+        kubeconfig_bytes = base64.b64encode(kubeconfig.encode('utf-8'))
         response_data = {
             'name': pod_name,
             'kubeconfig': kubeconfig_bytes.decode('utf-8'),
             'namespace':  app.project.name
         }
-        # logger.info(response_data)
-
         return Response(response_data)
 
 class CustomDomainView(APIView):

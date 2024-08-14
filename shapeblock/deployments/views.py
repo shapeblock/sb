@@ -18,6 +18,7 @@ from rest_framework.generics import ListCreateAPIView
 from .models import Deployment, App
 from .serializers import DeploymentSerializer, DeploymentReadSerializer
 from shapeblock.apps.kubernetes import run_deploy_pipeline
+from shapeblock.apps.utils import get_kubeconfig
 
 logger = logging.getLogger("django")
 
@@ -119,7 +120,8 @@ class PodInfoView(APIView):
 
     def get(self, request, deployment_uuid, *args, **kwargs):
         deployment = get_object_or_404(Deployment, uuid=deployment_uuid)
-        kubeconfig_bytes = base64.b64encode(deployment.app.project.cluster.kubeconfig.encode('utf-8'))
+        kubeconfig = get_kubeconfig()
+        kubeconfig_bytes = base64.b64encode(kubeconfig.encode('utf-8'))
         response_data = {
             'name': deployment.pod,
             'kubeconfig': kubeconfig_bytes.decode('utf-8'),

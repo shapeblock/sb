@@ -255,3 +255,4 @@ CLUSTER_DOMAIN = env("CLUSTER_DOMAIN", default="example.com")
 
 
 FERNET_KEYS = env.list('FERNET_KEYS')
+CONTROL_PLANE_IP = env('CONTROL_PLANE_IP')

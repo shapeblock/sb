@@ -1,4 +1,5 @@
 import logging
+import base64
 
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import serialization
@@ -159,3 +160,35 @@ def trigger_deploy_from_github_webhook(request_headers, body):
         app.status = "building"
         app.save()
     logger.info(f"Triggering deployment for webhook {delivery_id} in app {app.name}.")
+
+
+def get_kubeconfig():
+    with open('/var/run/secrets/kubernetes.io/serviceaccount/ca.crt', 'r') as ca_crt_file:
+        ca_crt = ca_crt_file.read()
+
+    with open('/var/run/secrets/kubernetes.io/serviceaccount/token', 'r') as token_file:
+        token = token_file.read()
+
+    external_kube_api_url = f"https://{settings.CONTROL_PLANE_IP}:6443"
+
+    base64_ca_crt = base64.b64encode(ca_crt.encode('utf-8')).decode('utf-8')
+    kubeconfig = f"""
+    apiVersion: v1
+    kind: Config
+    clusters:
+    - cluster:
+        certificate-authority: {base64_ca_crt}
+        server: {external_kube_api_url}
+        name: external-cluster
+    contexts:
+    - context:
+        cluster: external-cluster
+        user: default
+        name: external-cluster
+    current-context: external-cluster
+    users:
+    - name: default
+        user:
+        token: {token}
+    """
+    return kubeconfig
