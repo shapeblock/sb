@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import App, EnvVar, Secret, BuildVar, Volume,CustomDomain
+from .models import App, EnvVar, Secret, BuildVar, Volume,CustomDomain, InitProcess, WorkerProcess
 from shapeblock.projects.models import Project
 from shapeblock.services.models import Service
 
@@ -69,6 +69,16 @@ class VolumeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Volume
         fields = ['id', 'name', 'mount_path', 'size']
+
+class InitProcessSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InitProcess
+        fields = ['id', 'key', 'memory', 'cpu']
+
+class WorkerProcessSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkerProcess
+        fields = ['id', 'key', 'memory', 'cpu']
 
 class ProjectReadSerializer(serializers.ModelSerializer):
     class Meta:

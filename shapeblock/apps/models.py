@@ -193,7 +193,7 @@ class InitProcess(models.Model):
     key = models.CharField(null=False, max_length=100, validators=[AppNameValidator])
     memory = models.CharField(null=False, max_length=5, default="512Mi")
     cpu = models.CharField(null=False, max_length=5, default="500m")
-    app = models.ForeignKey(App, on_delete=models.CASCADE)
+    app = models.ForeignKey(App, on_delete=models.CASCADE, related_name='init_processes')
 
     def __str__(self):
         return f"{self.key}-{self.app}"
@@ -206,7 +206,7 @@ class WorkerProcess(models.Model):
     key = models.CharField(null=False, max_length=100, validators=[AppNameValidator])
     memory = models.CharField(null=False, max_length=5, default="1Gi")
     cpu = models.CharField(null=False, max_length=5, default="1000m")
-    app = models.ForeignKey(App, on_delete=models.CASCADE)
+    app = models.ForeignKey(App, on_delete=models.CASCADE, related_name='workers')
 
     def __str__(self):
         return f"{self.key}-{self.app}"

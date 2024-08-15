@@ -6,8 +6,8 @@ from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from .models import App, EnvVar, BuildVar, Secret, Volume,CustomDomain
-from .serializers import AppSerializer, EnvVarSerializer, BuildVarSerializer, SecretSerializer, VolumeSerializer, AppReadSerializer,CustomDomainSerializer
+from .models import App, EnvVar, BuildVar, Secret, Volume, CustomDomain, InitProcess, WorkerProcess
+from .serializers import AppSerializer, EnvVarSerializer, BuildVarSerializer, SecretSerializer, VolumeSerializer, AppReadSerializer,CustomDomainSerializer, InitProcessSerializer, WorkerProcessSerializer
 from rest_framework.permissions import IsAuthenticated
 from .kubernetes import delete_app_task
 from .kubernetes import delete_app_task, get_app_pod
@@ -141,57 +141,37 @@ class AppBuildVarsAPIView(KeyValAPIView):
 
 
 class InitProcessView(APIView):
-    def post(self, request):
-        serializer = InitProcessSerializer(data=request.data)
-        if serializer.is_valid():
-            try:
-                # Run migrations
-                call_command('migrate', interactive=False)
-                return Response({'message': 'Migrations completed successfully'}, status=status.HTTP_200_OK)
-            except Exception as e:
-                return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    model_class = InitProcess
+    serializer_class = InitProcessSerializer
+    entity_key = 'init_processes'
+    key_name = 'key'
 
+    def update(self, app, kvs):
+        for kv in kvs:
+            process_id = kv.get('id')
+            key = kv.get('key')
+            memory = kv.get('memory')
+            cpu = kv.get('cpu')
 
-class VolumesAPIView(APIView):
+            if process_id:
+                self.model_class.objects.filter(id=process_id).update(
+                    key=key,
+                    memory=memory,
+                    cpu=cpu,
+                )
+            else:
+                self.model_class.objects.create(
+                    key=key,
+                    memory=memory,
+                    cpu=cpu,
+                    app=app,
+                )
+
+class VolumesAPIView(KeyValAPIView):
     model_class = Volume
     serializer_class = VolumeSerializer
     entity_key = 'volumes'
     key_name = 'name'
-
-    def patch(self, request, uuid):
-
-        try:
-            app = App.objects.get(uuid=uuid, user=request.user)
-        except App.DoesNotExist:
-            return Response({'detail': 'App not found.'}, status=404)
-
-        entity_key = self.entity_key
-        # Extract env_vars and delete lists from the request data
-        kvs_to_update = request.data.get(entity_key, [])
-        keys_to_delete = request.data.get('delete', [])
-
-        if not kvs_to_update and not keys_to_delete:
-            return Response({'detail': f"Either the \"{entity_key}\" or \"delete\" key must be present in payload."}, status=status.HTTP_400_BAD_REQUEST)
-        # Validate that no key is found in both lists
-        update_names = [kv[self.key_name] for kv in kvs_to_update]
-        if any(name in keys_to_delete for name in update_names):
-            return Response({'detail': 'The same key cannot be present in both update and delete lists.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        model_class = self.model_class
-        # Process deletions
-        for name in keys_to_delete:
-            model_class.objects.filter(app=app, name=name).delete()
-
-        # Process updates and creations
-        self.update(app, kvs_to_update)
-
-        # Prepare the response
-        serializer_class = self.serializer_class
-        updated_vars = model_class.objects.filter(app=app)
-        serializer = serializer_class(updated_vars, many=True)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def update(self, app, kvs):
         for kv in kvs:
@@ -215,6 +195,7 @@ class VolumesAPIView(APIView):
                     name=name
                 )
 
+
 class ShellInfoView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -234,21 +215,13 @@ class CustomDomainView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, app_uuid):
-        try:
-            app = App.objects.get(uuid=app_uuid)
-        except App.DoesNotExist:
-            raise NotFound("App not found")
-
+        app = get_object_or_404(App, uuid=app_uuid)
         custom_domains = CustomDomain.objects.filter(app=app)
         serializer = CustomDomainSerializer(custom_domains, many=True)
         return Response(serializer.data)
 
     def post(self, request, app_uuid):
-        try:
-            app = App.objects.get(uuid=app_uuid)
-        except App.DoesNotExist:
-            raise NotFound("App not found")
-
+        app = get_object_or_404(App, uuid=app_uuid)
         custom_domains_data = request.data.get('custom_domains', [])
         delete_domains_data = request.data.get('delete', [])
 
@@ -280,10 +253,6 @@ class CustomDomainView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request, app_uuid):
-        try:
-            app = App.objects.get(uuid=app_uuid)
-        except App.DoesNotExist:
-            raise NotFound("App not found")
-
+        app = get_object_or_404(App, uuid=app_uuid)
         CustomDomain.objects.filter(app=app).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
