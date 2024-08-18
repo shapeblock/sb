@@ -161,6 +161,31 @@ class InitProcessView(APIView):
                     app=app,
                 )
 
+class WorkerProcessView(APIView):
+    model_class = WorkerProcess
+    serializer_class = InitProcessSerializer
+    entity_key = 'workers'
+    key_name = 'key'
+
+    def update(self, app, kvs):
+        for kv in kvs:
+            process_id = kv.get('id')
+            key = kv.get('key')
+            memory = kv.get('memory')
+            cpu = kv.get('cpu')
+
+            if process_id:
+                worker = self.model_class.objects.filter(id=process_id)
+            else:
+                worker = self.model_class()
+                worker.app = app
+            worker.key = key
+            if memory:
+                worker.memory = memory
+            if cpu:
+                worker.cpu = cpu
+            worker.save()
+
 class VolumesAPIView(KeyValAPIView):
     model_class = Volume
     serializer_class = VolumeSerializer

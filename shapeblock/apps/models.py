@@ -204,6 +204,7 @@ class InitProcess(models.Model):
 
 class WorkerProcess(models.Model):
     key = models.CharField(null=False, max_length=100, validators=[AppNameValidator])
+    #TODO: add a memory and CPU validator
     memory = models.CharField(null=False, max_length=5, default="1Gi")
     cpu = models.CharField(null=False, max_length=5, default="1000m")
     app = models.ForeignKey(App, on_delete=models.CASCADE, related_name='workers')
