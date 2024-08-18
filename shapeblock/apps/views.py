@@ -150,20 +150,14 @@ class InitProcessView(APIView):
         for kv in kvs:
             process_id = kv.get('id')
             key = kv.get('key')
-            memory = kv.get('memory')
-            cpu = kv.get('cpu')
 
             if process_id:
                 self.model_class.objects.filter(id=process_id).update(
                     key=key,
-                    memory=memory,
-                    cpu=cpu,
                 )
             else:
                 self.model_class.objects.create(
                     key=key,
-                    memory=memory,
-                    cpu=cpu,
                     app=app,
                 )
 

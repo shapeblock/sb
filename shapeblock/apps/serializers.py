@@ -73,7 +73,7 @@ class VolumeSerializer(serializers.ModelSerializer):
 class InitProcessSerializer(serializers.ModelSerializer):
     class Meta:
         model = InitProcess
-        fields = ['id', 'key', 'memory', 'cpu']
+        fields = ['id', 'key']
 
 class WorkerProcessSerializer(serializers.ModelSerializer):
     class Meta:

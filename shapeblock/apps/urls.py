@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from shapeblock.apps.views import CustomDomainView
+from shapeblock.apps.views import CustomDomainView, InitProcessView
 from shapeblock.deployments.views import DeploymentListCreateAPIView
 
 urlpatterns = [
@@ -17,5 +17,6 @@ urlpatterns = [
     path('<uuid:uuid>/secrets/', views.AppSecretAPIView.as_view(), name='app-secrets'),
     path('<uuid:uuid>/volumes/', views.VolumesAPIView.as_view(), name='app-volumes'),
     path('<uuid:app_uuid>/deployments/', DeploymentListCreateAPIView.as_view(), name='deployment-list-create'),
-    path('<uuid:app_uuid>/custom-domains/', views.CustomDomainView.as_view(), name='custom-domain'),
+    path('<uuid:app_uuid>/custom-domains/', CustomDomainView.as_view(), name='custom-domain'),
+    path('<uuid:app_uuid>/init-process/', InitProcessView.as_view(), name='init-process'),
 ]
