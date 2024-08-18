@@ -140,7 +140,7 @@ class AppBuildVarsAPIView(KeyValAPIView):
     entity_key = 'build_vars'
 
 
-class InitProcessView(APIView):
+class InitProcessView(KeyValAPIView):
     model_class = InitProcess
     serializer_class = InitProcessSerializer
     entity_key = 'init_processes'
@@ -161,7 +161,7 @@ class InitProcessView(APIView):
                     app=app,
                 )
 
-class WorkerProcessView(APIView):
+class WorkerProcessView(KeyValAPIView):
     model_class = WorkerProcess
     serializer_class = InitProcessSerializer
     entity_key = 'workers'
