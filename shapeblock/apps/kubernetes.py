@@ -69,8 +69,7 @@ def run_deploy_pipeline(deployment: Deployment):
         },
         # TODO: should this change on a per deployment basis?
         "chart_version": settings.CHART_VERSION,
-        # TODO: don't hard code it
-        "replicas": 1,
+        "replicas": app.replicas,
         "type": app.stack,
         "env_vars": EnvVar.objects.filter(app=app),
         "secrets": Secret.objects.filter(app=app),

@@ -76,6 +76,8 @@ class App(BaseModel, OwnedModel):
 
     has_liveness_probe = models.BooleanField(default=True)
 
+    replicas = models.PositiveSmallIntegerField(default=1, validators=[MaxValueValidator(6)], null=False)
+
     def __str__(self):
         return self.name
 

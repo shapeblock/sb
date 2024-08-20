@@ -92,7 +92,7 @@ class AppReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = App
-        fields = ["project", "uuid", "name", "stack", "repo", "ref", "sub_path", "user", "env_vars", "build_vars", "volumes", "created_at", "status", "domain", "secrets", "services", "custom_domains"]
+        fields = ["project", "uuid", "name", "stack", "repo", "ref", "sub_path", "user", "env_vars", "build_vars", "volumes", "created_at", "status", "domain", "secrets", "services", "custom_domains", "init_processes", "workers"]
 
     project = ProjectReadSerializer(required=True)
 
@@ -107,6 +107,10 @@ class AppReadSerializer(serializers.ModelSerializer):
     services = ServiceRefSerializer(many=True)
 
     custom_domains = CustomDomainSerializer(many=True)
+
+    init_processes = InitProcessSerializer(many=True)
+
+    workers = WorkerProcessSerializer(many=True)
 
     def get_domain(self, obj):
         return obj.domain

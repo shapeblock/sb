@@ -163,7 +163,7 @@ class InitProcessView(KeyValAPIView):
 
 class WorkerProcessView(KeyValAPIView):
     model_class = WorkerProcess
-    serializer_class = InitProcessSerializer
+    serializer_class = WorkerProcessSerializer
     entity_key = 'workers'
     key_name = 'key'
 

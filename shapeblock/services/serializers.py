@@ -44,4 +44,9 @@ class ServiceReadSerializer(serializers.ModelSerializer):
     project = ProjectRefSerializer(required=True)
 
     apps = AppRefSerializer(many=True, required=False)
-    
+
+class ServiceRefSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Service
+        fields = ["uuid", "name", "type"]

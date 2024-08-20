@@ -11,6 +11,8 @@ from shapeblock.services.serializers import ServiceSerializer
 from rest_framework.views import APIView
 from shapeblock.apps.models import App
 from shapeblock.apps.serializers import AppRefSerializer
+from shapeblock.services.models import Service
+from shapeblock.services.serializers import ServiceRefSerializer
 
 logger = logging.getLogger("django")
 
@@ -77,6 +79,23 @@ class ProjectAppsView(APIView):
         apps = App.objects.filter(project=project)
 
         serializer = AppRefSerializer(apps, many=True)
+
+        # Return the serialized data
+        return Response(serializer.data)
+
+class ProjectServicesView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, uuid):
+
+        try:
+            project = Project.objects.get(uuid=uuid, user=request.user)
+        except Project.DoesNotExist:
+            return Response({'detail': 'Project not found.'}, status=404)
+        services = Service.objects.filter(project=project)
+
+        serializer = ServiceRefSerializer(services, many=True)
 
         # Return the serialized data
         return Response(serializer.data)
