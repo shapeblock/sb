@@ -42,6 +42,23 @@ class AppViewSet(viewsets.GenericViewSet):
         serializer = AppReadSerializer(apps, many=True)
         return Response(serializer.data)
 
+    def patch(self, request, uuid=None, *args, **kwargs):
+        app = get_object_or_404(App, uuid=uuid, user=request.user)
+        replicas = request.data.get('replicas')
+        if replicas:
+            app.replicas = int(replicas)
+        has_liveness_probe = request.data.get('liveness_probe')
+        if has_liveness_probe in ['true', 'True', '1', 'yes', 'on', True]:
+            has_liveness_probe = True
+        elif has_liveness_probe in ['false', 'False', '0', 'no', 'off', False]:
+            has_liveness_probe = False
+        else:
+            return Response("Invalid boolean value for liveness_probe", status=status.HTTP_400_BAD_REQUEST)
+        app.has_liveness_probe = has_liveness_probe
+        app.save()
+        serializer = AppReadSerializer(app)
+        return Response(serializer.data)
+
     def retrieve(self, request, uuid=None, *args, **kwargs):
         app = App.objects.get(uuid=uuid, user=request.user)
         serializer = AppReadSerializer(app)

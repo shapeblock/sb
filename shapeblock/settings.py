@@ -139,6 +139,7 @@ USE_I18N = True
 
 USE_TZ = True
 
+AUTH_USER_MODEL = "authentication.CustomUser"
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
@@ -207,7 +208,10 @@ EMAIL_SUBJECT_PREFIX = env("EMAIL_SUBJECT_PREFIX", default="[ShapeBlock] ")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL")
 
 # App specific
-GITHUB_TOKEN = env("GH_TOKEN")
+GITHUB_TOKEN = env("GITHUB_TOKEN")
+
+GITHUB_CLIENT_KEY = env("GITHUB_CLIENT_KEY")
+GITHUB_CLIENT_SECRET = env("GITHUB_CLIENT_SECRET")
 
 CHART_VERSION = env("CHART_VERSION", default="0.2.0")
 

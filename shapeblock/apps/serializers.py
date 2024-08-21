@@ -92,7 +92,7 @@ class AppReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = App
-        fields = ["project", "uuid", "name", "stack", "repo", "ref", "sub_path", "user", "env_vars", "build_vars", "volumes", "created_at", "status", "domain", "secrets", "services", "custom_domains", "init_processes", "workers"]
+        fields = ["project", "uuid", "name", "stack", "repo", "ref", "sub_path", "user", "env_vars", "build_vars", "volumes", "created_at", "status", "domain", "secrets", "services", "custom_domains", "init_processes", "workers", "has_liveness_probe", "replicas", "autodeploy"]
 
     project = ProjectReadSerializer(required=True)
 

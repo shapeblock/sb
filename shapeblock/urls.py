@@ -6,6 +6,7 @@ from shapeblock.deployments.views import UpdateDeploymentView, PodInfoView
 from shapeblock.services.views import UpdateServiceDeploymentView
 from shapeblock.apps.views import ShellInfoView
 from rest_framework.authtoken import views
+from shapeblock.authentication.views import AddUserGithubTokenAPIView, GithubClientInfoAPIView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -18,6 +19,6 @@ urlpatterns = [
     path("deployments/<uuid:deployment_uuid>/pod-info/", PodInfoView.as_view(), name="pod-info"),
     path("apps/<uuid:app_uuid>/shell-info/", ShellInfoView.as_view(), name="shell-info"),
     path('api/auth/', include('dj_rest_auth.urls')),
-    path('api/auth/token/', views.obtain_auth_token),
-
+    path('api/github-token/', AddUserGithubTokenAPIView.as_view(), name='github-token'),
+    path('api/github-client/', GithubClientInfoAPIView.as_view(), name='github-client-info'),
 ]

@@ -11,6 +11,7 @@ urlpatterns = [
     path('<uuid:uuid>/', views.AppViewSet.as_view({
         'get': 'retrieve',
         'delete': 'destroy',
+        'patch': 'patch',
     }), name='app-detail'),
     path('<uuid:uuid>/env-vars/', views.AppEnvVarAPIView.as_view(), name='app-env-vars'),
     path('<uuid:uuid>/build-vars/', views.AppBuildVarsAPIView.as_view(), name='app-build-vars'),
