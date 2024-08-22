@@ -35,6 +35,10 @@ class GithubClientInfoAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
+        if not settings.GITHUB_CLIENT_KEY:
+            return Response(
+                "This installation cannnot be integrated with Github. Please add a GITHUB_CLIENT_KEY and GITHUB_CLIENT_SECRET and re-deploy the application."
+            )
         data = {
             "client_id": settings.GITHUB_CLIENT_KEY,
             "secret": settings.GITHUB_CLIENT_SECRET,
