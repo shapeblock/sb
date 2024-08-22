@@ -4,7 +4,7 @@ from django.conf import settings
 from django.urls import path, include
 from shapeblock.deployments.views import UpdateDeploymentView, PodInfoView
 from shapeblock.services.views import UpdateServiceDeploymentView
-from shapeblock.apps.views import ShellInfoView
+from shapeblock.apps.views import ShellInfoView, webhook_view
 from rest_framework.authtoken import views
 from shapeblock.authentication.views import (
     AddUserGithubTokenAPIView,
@@ -38,4 +38,5 @@ urlpatterns = [
         GithubClientInfoAPIView.as_view(),
         name="github-client-info",
     ),
+    path("webhook/", webhook_view, name="webhook"),
 ]

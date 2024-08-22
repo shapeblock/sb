@@ -138,7 +138,7 @@ def add_github_deploy_key(app: App):
 
 
 def add_github_webhook(app: App):
-    token = app.get_github_user_token()
+    token = app.get_user_github_token()
     if not token:
         return
     protocol, repo_fullname = app.get_repo_details()
@@ -147,7 +147,10 @@ def add_github_webhook(app: App):
         return
     if protocol != "git":
         return
-    webhook_config = {"url": f"{settings.SB_URL}/webhook/", "content_type": "json"}
+    webhook_config = {
+        "url": f"https://sb.{settings.CLUSTER_DOMAIN}/webhook/",
+        "content_type": "json",
+    }
     hook = repo.create_hook(
         name="web", config=webhook_config, events=["push"], active=True
     )

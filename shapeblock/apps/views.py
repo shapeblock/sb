@@ -1,11 +1,16 @@
 import logging
 import base64
+import json
 from .models import App, EnvVar
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.response import Response
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse, HttpResponse
+
 from .models import (
     App,
     EnvVar,
@@ -30,7 +35,12 @@ from .serializers import (
 from rest_framework.permissions import IsAuthenticated
 from .kubernetes import delete_app_task, create_app_secret
 from .kubernetes import delete_app_task, get_app_pod
-from .utils import get_kubeconfig, add_github_deploy_key, add_github_webhook
+from .utils import (
+    get_kubeconfig,
+    add_github_deploy_key,
+    add_github_webhook,
+    trigger_deploy_from_github_webhook,
+)
 
 logger = logging.getLogger("django")
 
@@ -58,9 +68,7 @@ class AppViewSet(viewsets.GenericViewSet):
                 self.create_app_secret(app)
             except Exception as e:
                 return Response(
-                    "Failed to create app secret. You probably don't have permissions to create a deploy key.: {}".format(
-                        e
-                    ),
+                    "Failed to create app: {}".format(e),
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -76,14 +84,44 @@ class AppViewSet(viewsets.GenericViewSet):
         serializer = AppReadSerializer(apps, many=True)
         return Response(serializer.data)
 
-    def patch(self, request, uuid=None, *args, **kwargs):
-        app = get_object_or_404(App, uuid=uuid, user=request.user)
-        # scale/replicas
+    def retrieve(self, request, uuid=None, *args, **kwargs):
+        app = App.objects.get(uuid=uuid, user=request.user)
+        serializer = AppReadSerializer(app)
+        return Response(serializer.data)
+
+    def destroy(self, request, uuid=None, *args, **kwargs):
+        app = self.get_queryset().get(uuid=uuid)
+        delete_app_task(app)
+        app.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class AppScaleView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, uuid):
+        try:
+            app = App.objects.get(uuid=uuid, user=request.user)
+        except App.DoesNotExist:
+            return Response({"detail": "App not found."}, status=404)
+
         replicas = request.data.get("replicas")
         if replicas:
             app.replicas = int(replicas)
+        app.save()
+        serializer = AppReadSerializer(app)
+        return Response(serializer.data)
 
-        # liveness probe
+
+class LivenessProbeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, uuid):
+        try:
+            app = App.objects.get(uuid=uuid, user=request.user)
+        except App.DoesNotExist:
+            return Response({"detail": "App not found."}, status=404)
+
         has_liveness_probe = request.data.get("liveness_probe")
         if has_liveness_probe in ["true", "True", "1", "yes", "on", True]:
             has_liveness_probe = True
@@ -96,10 +134,27 @@ class AppViewSet(viewsets.GenericViewSet):
             )
         app.has_liveness_probe = has_liveness_probe
         app.save()
+        serializer = AppReadSerializer(app)
+        return Response(serializer.data)
 
-        # Autodeploy
+
+class AutoDeployView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, uuid):
+        try:
+            app = App.objects.get(uuid=uuid, user=request.user)
+        except App.DoesNotExist:
+            return Response({"detail": "App not found."}, status=404)
+
         autodeploy = request.data.get("autodeploy")
         if autodeploy in ["true", "True", "1", "yes", "on", True]:
+            token = app.get_user_github_token()
+            if not token:
+                return Response(
+                    "Webhooks can be added only after integrating with Github",
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             autodeploy = True
             # TODO: make this atomic so that app save and github add happen together
             add_github_webhook(app)
@@ -114,17 +169,6 @@ class AppViewSet(viewsets.GenericViewSet):
         app.save()
         serializer = AppReadSerializer(app)
         return Response(serializer.data)
-
-    def retrieve(self, request, uuid=None, *args, **kwargs):
-        app = App.objects.get(uuid=uuid, user=request.user)
-        serializer = AppReadSerializer(app)
-        return Response(serializer.data)
-
-    def destroy(self, request, uuid=None, *args, **kwargs):
-        app = self.get_queryset().get(uuid=uuid)
-        delete_app_task(app)
-        app.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class KeyValAPIView(APIView):
@@ -358,3 +402,25 @@ class CustomDomainView(APIView):
         app = get_object_or_404(App, uuid=app_uuid)
         CustomDomain.objects.filter(app=app).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@require_POST
+@csrf_exempt
+def webhook_view(request):
+    try:
+        # Parse the incoming JSON payload
+        payload = json.loads(request.body)
+
+        delivery_id = request.headers.get("X-GitHub-Delivery")
+        # Log the payload
+        logger.info("Webhook received: %s", delivery_id)
+
+        trigger_deploy_from_github_webhook(request.headers, payload)
+        # Return success response
+        return JsonResponse({"status": "success"})
+    except json.JSONDecodeError as e:
+        # Log the error
+        logger.error("Invalid JSON received: %s", e)
+
+        # Return error response
+        return HttpResponse(status=400)

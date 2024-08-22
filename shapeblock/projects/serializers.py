@@ -20,6 +20,13 @@ class ProjectSerializer(serializers.ModelSerializer):
         validated_data["user"] = self.context["request"].user
         return super().create(validated_data)
 
+    def validate_display_name(self, value):
+        if Project.objects.filter(display_name=value).exists():
+            raise serializers.ValidationError(
+                f"A project with the name '{value}' already exists."
+            )
+        return value
+
 
 class ProjectReadSerializer(serializers.ModelSerializer):
     class Meta:

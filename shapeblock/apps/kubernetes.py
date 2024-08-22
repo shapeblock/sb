@@ -37,6 +37,10 @@ def get_app_pod(app: App):
 
 def create_app_secret(app: App):
     logger.info("Creating app secret.")
+    if settings.TEST_RUN:
+        logger.debug("--- TEST RUN ---")
+        return
+    # TODO: handle unhappy paths
     config.load_incluster_config()
     v1 = client.CoreV1Api()
     namespace = app.project.name

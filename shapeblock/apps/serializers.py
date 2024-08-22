@@ -1,3 +1,7 @@
+from github import Github, GithubException, UnknownObjectException
+from django.core.exceptions import ValidationError
+from django.conf import settings
+from urllib.parse import urlparse
 from rest_framework import serializers
 
 from .models import (
@@ -12,6 +16,50 @@ from .models import (
 )
 from shapeblock.projects.models import Project
 from shapeblock.services.models import Service
+
+
+def validate_github_repo_and_branch(url, branch, user_github_token):
+    parsed_url = urlparse(url)
+    if parsed_url.netloc != "github.com":
+        raise ValidationError("Invalid GitHub URL.")
+
+    repo_path = parsed_url.path.strip("/").rstrip(".git")
+
+    if user_github_token:
+        gh = Github(user_github_token)
+    else:
+        gh = Github(
+            settings.GITHUB_TOKEN
+        )  # Fallback to settings token for public repos only
+
+    try:
+        print(repo_path)
+        try:
+            repo = gh.get_repo(repo_path)
+        except UnknownObjectException:
+            if not user_github_token:
+                raise ValidationError(
+                    "A personal GitHub token is required to access private repositories."
+                )
+            else:
+                raise ValidationError(f"The repo {url} could not be found.")
+
+        if branch not in [b.name for b in repo.get_branches()]:
+            raise ValidationError(
+                f'The branch "{branch}" does not exist in the repository.'
+            )
+        if repo.private:
+            transformed_url = f"git@github.com:{repo_path}.git"
+        else:
+            transformed_url = f"https://github.com/{repo_path}.git"
+
+        return transformed_url
+
+    except GithubException as e:
+        raise ValidationError(f"GitHub API Error: {str(e)}")
+
+    except Exception as e:
+        raise ValidationError(f"An error occurred: {str(e)}")
 
 
 class ServiceRefSerializer(serializers.ModelSerializer):
@@ -59,6 +107,24 @@ class AppSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data["user"] = self.context["request"].user
         return super().create(validated_data)
+
+    def validate(self, attrs):
+        name = attrs.get("name")
+        project = attrs.get("project")
+
+        # Check for uniqueness manually
+        if App.objects.filter(name=name, project=project).exists():
+            raise serializers.ValidationError(
+                f"An app with the name {name} already exists in project {project}."
+            )
+
+        repo = attrs.get("repo")
+        ref = attrs.get("ref")
+        user_github_token = self.context["request"].user.github_token
+        transformed_url = validate_github_repo_and_branch(repo, ref, user_github_token)
+        attrs["repo"] = transformed_url
+
+        return attrs
 
 
 class InitProcessSerializer(serializers.Serializer):

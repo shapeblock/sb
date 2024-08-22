@@ -1,6 +1,13 @@
 from django.urls import path
 from . import views
-from shapeblock.apps.views import CustomDomainView, InitProcessView, WorkerProcessView
+from shapeblock.apps.views import (
+    CustomDomainView,
+    InitProcessView,
+    WorkerProcessView,
+    AutoDeployView,
+    LivenessProbeView,
+    AppScaleView,
+)
 from shapeblock.deployments.views import DeploymentListCreateAPIView
 
 urlpatterns = [
@@ -20,7 +27,6 @@ urlpatterns = [
             {
                 "get": "retrieve",
                 "delete": "destroy",
-                "patch": "patch",
             }
         ),
         name="app-detail",
@@ -47,4 +53,11 @@ urlpatterns = [
     ),
     path("<uuid:uuid>/init-process/", InitProcessView.as_view(), name="init-process"),
     path("<uuid:uuid>/worker/", WorkerProcessView.as_view(), name="worker"),
+    path("<uuid:uuid>/autodeploy/", AutoDeployView.as_view(), name="autodeploy"),
+    path(
+        "<uuid:uuid>/liveness-probe/",
+        LivenessProbeView.as_view(),
+        name="liveness-probe",
+    ),
+    path("<uuid:uuid>/scale/", AppScaleView.as_view(), name="scale"),
 ]
