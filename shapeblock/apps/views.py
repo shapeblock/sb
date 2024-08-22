@@ -9,9 +9,9 @@ from rest_framework.response import Response
 from .models import App, EnvVar, BuildVar, Secret, Volume, CustomDomain, InitProcess, WorkerProcess
 from .serializers import AppSerializer, EnvVarSerializer, BuildVarSerializer, SecretSerializer, VolumeSerializer, AppReadSerializer,CustomDomainSerializer, InitProcessSerializer, WorkerProcessSerializer
 from rest_framework.permissions import IsAuthenticated
-from .kubernetes import delete_app_task
+from .kubernetes import delete_app_task, create_app_secret
 from .kubernetes import delete_app_task, get_app_pod
-from .utils import get_kubeconfig
+from .utils import get_kubeconfig, add_github_deploy_key, add_github_webhook
 
 logger = logging.getLogger("django")
 
@@ -32,10 +32,20 @@ class AppViewSet(viewsets.GenericViewSet):
         serializer_class = self.serializer_class
         serializer = serializer_class(data=request.data, context={'request': request})
         if serializer.is_valid():
-          serializer.save(user=self.request.user)
+          app = serializer.save(user=self.request.user)
+          try:
+            self.create_app_secret(app)
+          except Exception as e:
+              return Response("Failed to create app secret. You probably don't have permissions to create a deploy key.: {}".format(
+                    e
+                ), status=status.HTTP_400_BAD_REQUEST)
           return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
           return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def create_app_secret(self, app):
+        add_github_deploy_key(app)
+        create_app_secret(app)
 
     def list(self, request, *args, **kwargs):
         apps = App.objects.filter(user=request.user)
@@ -44,9 +54,12 @@ class AppViewSet(viewsets.GenericViewSet):
 
     def patch(self, request, uuid=None, *args, **kwargs):
         app = get_object_or_404(App, uuid=uuid, user=request.user)
+        # scale/replicas
         replicas = request.data.get('replicas')
         if replicas:
             app.replicas = int(replicas)
+
+        # liveness probe
         has_liveness_probe = request.data.get('liveness_probe')
         if has_liveness_probe in ['true', 'True', '1', 'yes', 'on', True]:
             has_liveness_probe = True
@@ -55,6 +68,19 @@ class AppViewSet(viewsets.GenericViewSet):
         else:
             return Response("Invalid boolean value for liveness_probe", status=status.HTTP_400_BAD_REQUEST)
         app.has_liveness_probe = has_liveness_probe
+        app.save()
+
+        # Autodeploy
+        autodeploy = request.data.get('autodeploy')
+        if autodeploy in ['true', 'True', '1', 'yes', 'on', True]:
+            autodeploy = True
+            # TODO: make this atomic so that app save and github add happen together
+            add_github_webhook(app)
+        elif autodeploy in ['false', 'False', '0', 'no', 'off', False]:
+            autodeploy = False
+        else:
+            return Response("Invalid boolean value for autodeploy", status=status.HTTP_400_BAD_REQUEST)
+        app.autodeploy = autodeploy
         app.save()
         serializer = AppReadSerializer(app)
         return Response(serializer.data)

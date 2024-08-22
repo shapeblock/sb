@@ -96,8 +96,10 @@ class App(BaseModel, OwnedModel):
         protocol = match["protocol"]
         return protocol, full_name
 
-    def get_user_github_token(self):
-        #TODO: get user's github token
+    def get_user_github_token(self, user=None):
+        user = user if user else self.user
+        if user.github_token:
+            return user.github_token
         return None
 
     def get_sb_yml(self) -> Dict:
@@ -243,6 +245,3 @@ class CustomDomain(models.Model):
 
     def __str__(self):
         return f"{self.domain}-{self.app}"
-
-
-# TODO: tasks

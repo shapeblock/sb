@@ -94,7 +94,7 @@ def generate_ecdsa_keys():
 
 
 def add_github_deploy_key(app: App):
-    token = app.get_github_user_token()
+    token = app.get_user_github_token()
     if not token:
         return
     protocol, repo_fullname = app.get_repo_details()
