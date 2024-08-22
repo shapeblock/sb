@@ -14,9 +14,13 @@ def get_bitbucket_token(client_id: str, secret: str, refresh_token: str) -> str:
         "grant_type": "refresh_token",
         "refresh_token": refresh_token,
     }
-    response = requests.post(refresh_token_url, auth=HTTPBasicAuth(client_id, secret), data=data)
+    response = requests.post(
+        refresh_token_url, auth=HTTPBasicAuth(client_id, secret), data=data
+    )
     if response.status_code != 200:
-        logger.error(f"Unable to get access token, got status code: {response.status_code}")
+        logger.error(
+            f"Unable to get access token, got status code: {response.status_code}"
+        )
         return response.status_code
     response_data = response.json()
     return response_data["access_token"]
@@ -33,7 +37,9 @@ def get_workspaces(slug: str, token: str) -> tuple[int, List]:
     )
     ret = []
     if response.status_code != 200:
-        logger.error(f"Unable to get workspaces, got status code: {response.status_code}")
+        logger.error(
+            f"Unable to get workspaces, got status code: {response.status_code}"
+        )
         return response.status_code, ret
     response_data = response.json()
     for value in response_data["values"]:
@@ -70,7 +76,9 @@ def get_refs(workspace: str, repo_slug: str, token: str) -> tuple[int, List]:
     )
     ret = []
     if response.status_code != 200:
-        logger.error(f"Unable to get repo refs, got status code: {response.status_code}")
+        logger.error(
+            f"Unable to get repo refs, got status code: {response.status_code}"
+        )
         return response.status_code, ret
     response_data = response.json()
     for value in response_data["values"]:
@@ -78,7 +86,9 @@ def get_refs(workspace: str, repo_slug: str, token: str) -> tuple[int, List]:
     return response.status_code, ret
 
 
-def add_key(selected_user_uuid: str, ssh_public_key: str, token: str) -> tuple[int, str]:
+def add_key(
+    selected_user_uuid: str, ssh_public_key: str, token: str
+) -> tuple[int, str]:
     """
     Calling this results in the following error as of 3rd Jan 2022.
 
@@ -96,18 +106,24 @@ def add_key(selected_user_uuid: str, ssh_public_key: str, token: str) -> tuple[i
     return response.status_code, response_data["uuid"]
 
 
-def add_deploy_key(workspace: str, repo_slug: str, ssh_public_key: str, token: str) -> tuple[int, int]:
+def add_deploy_key(
+    workspace: str, repo_slug: str, ssh_public_key: str, token: str
+) -> tuple[int, int]:
     url = f"https://api.bitbucket.org/2.0/repositories/{workspace}/{repo_slug}/deploy-keys"
     print(url)
     data = {"key": ssh_public_key, "label": "e2e"}
     headers = {"Accept": "application/json", "Authorization": f"Bearer {token}"}
     response = requests.post(url, headers=headers, json=data)
     if response.status_code != 200:
-        logger.error(f"Unable to create deploy key, got status code: {response.status_code}")
+        logger.error(
+            f"Unable to create deploy key, got status code: {response.status_code}"
+        )
         return response.status_code, response.text
     response_data = response.json()
     return response.status_code, response_data["id"]
 
 
-def add_webhook(workspace: str, repo_slug: str, description: str, token: str) -> tuple[int, str]:
+def add_webhook(
+    workspace: str, repo_slug: str, description: str, token: str
+) -> tuple[int, str]:
     pass

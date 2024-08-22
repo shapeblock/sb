@@ -28,9 +28,23 @@ class TestGenerateHelmValues(unittest.TestCase):
             "docroot": "web",
             "envs": {"FOO": "bar", "CONFIG_VARS": '{"test":"hello world"}'},
             "secrets": ["API_KEY", "APP_SALT"],
-            "mounts": {"name": "upload-data", "mountPath": "web/sites/default/files", "size": "2Gi", "backup": False},
+            "mounts": {
+                "name": "upload-data",
+                "mountPath": "web/sites/default/files",
+                "size": "2Gi",
+                "backup": False,
+            },
             "keep": ["templates/*", "assets/*"],
-            "services": [{"db1": {"type": "mysql", "version": "10", "size": "2Gi", "backup": False}}],
+            "services": [
+                {
+                    "db1": {
+                        "type": "mysql",
+                        "version": "10",
+                        "size": "2Gi",
+                        "backup": False,
+                    }
+                }
+            ],
             "resources": {"cpu": "10m", "memory": "256Mi"},
             "domains": ["www.example.com", "hello.world.com"],
             "workers": {
@@ -64,25 +78,36 @@ class TestGenerateHelmValues(unittest.TestCase):
             "deploy": "set -x -e\ncurl -s https://get.symfony.com/cloud/configurator | bash  \n",
             "post_deploy": "set -x -e\ncurl -s https://get.symfony.com/cloud/configurator | bash  \n",
         }
-        deploy_app = render_to_string(f"create-app.yaml", {**self.metadata, **self.sb_yml})
+        deploy_app = render_to_string(
+            f"create-app.yaml", {**self.metadata, **self.sb_yml}
+        )
         self.app = yaml.safe_load(deploy_app)
         self.chart_values = yaml.safe_load(self.app["spec"]["chart"]["values"])
 
     def test_helm_generation_chart_version(self):
-        self.assertEqual(self.app["spec"]["chart"]["version"], self.metadata["chart_version"])
+        self.assertEqual(
+            self.app["spec"]["chart"]["version"], self.metadata["chart_version"]
+        )
 
     def test_helm_generation_stack_version(self):
         self.assertEqual(
-            self.app["spec"]["chart"]["build"][1], {"name": "BP_PHP_VERSION", "value": self.sb_yml["version"]}
+            self.app["spec"]["chart"]["build"][1],
+            {"name": "BP_PHP_VERSION", "value": self.sb_yml["version"]},
         )
 
     def test_helm_generation_release_prefix(self):
-        self.assertEqual(self.chart_values["universal-chart"]["releasePrefix"], self.sb_yml["name"])
+        self.assertEqual(
+            self.chart_values["universal-chart"]["releasePrefix"], self.sb_yml["name"]
+        )
 
     def test_helm_generation_env_vars(self):
-        self.assertEqual(self.chart_values["universal-chart"]["envs"]["FOO"], self.sb_yml["envs"]["FOO"])
         self.assertEqual(
-            self.chart_values["universal-chart"]["envs"]["CONFIG_VARS"], self.sb_yml["envs"]["CONFIG_VARS"]
+            self.chart_values["universal-chart"]["envs"]["FOO"],
+            self.sb_yml["envs"]["FOO"],
+        )
+        self.assertEqual(
+            self.chart_values["universal-chart"]["envs"]["CONFIG_VARS"],
+            self.sb_yml["envs"]["CONFIG_VARS"],
         )
 
     # secrets

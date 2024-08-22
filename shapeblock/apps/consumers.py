@@ -13,34 +13,24 @@ from kubernetes import client, config, watch
 
 class AppStatusConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.group_name = 'apps'
+        self.group_name = "apps"
 
-        await self.channel_layer.group_add(
-            self.group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
 
         await self.accept()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(
-            self.group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def receive(self, text_data):
         data = json.loads(text_data)
 
         await self.channel_layer.group_send(
-            self.group_name,
-            {
-                'type': 'app_status_message',
-                'data': data
-            }
+            self.group_name, {"type": "app_status_message", "data": data}
         )
 
     async def app_status_message(self, event):
-        await self.send(text_data=json.dumps(event['data']))
+        await self.send(text_data=json.dumps(event["data"]))
 
 
 class PodLogConsumer(AsyncWebsocketConsumer):
@@ -63,16 +53,25 @@ class PodLogConsumer(AsyncWebsocketConsumer):
         v1 = client.CoreV1Api()
         w = watch.Watch()
 
-        pods = v1.list_namespaced_pod(namespace=self.namespace, label_selector=f"appUuid={self.app_uuid}")
+        pods = v1.list_namespaced_pod(
+            namespace=self.namespace, label_selector=f"appUuid={self.app_uuid}"
+        )
         pod = pods.items[0]
         self.pod_name = pod.metadata.name
         for line in w.stream(
-            v1.read_namespaced_pod_log, name=self.pod_name, namespace=self.namespace, since_seconds=300
+            v1.read_namespaced_pod_log,
+            name=self.pod_name,
+            namespace=self.namespace,
+            since_seconds=300,
         ):
             formatted_line = f"{line}\n"
             # Send message to the channel layer from the thread
             async_to_sync(self.channel_layer.send)(
-                self.channel_name, {"type": "websocket.send", "text": json.dumps({"message": formatted_line})}
+                self.channel_name,
+                {
+                    "type": "websocket.send",
+                    "text": json.dumps({"message": formatted_line}),
+                },
             )
 
     async def disconnect(self, close_code):

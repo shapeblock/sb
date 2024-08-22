@@ -14,7 +14,15 @@ class ServiceAdmin(admin.ModelAdmin):
 
     ordering = ("-created_at",)
 
-    list_display = ["created_at", "name", "type", "project", "cluster", "user", "status"]
+    list_display = [
+        "created_at",
+        "name",
+        "type",
+        "project",
+        "cluster",
+        "user",
+        "status",
+    ]
 
     def cluster(self, obj):
         return obj.project.cluster

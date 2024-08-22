@@ -18,12 +18,14 @@ def create_and_trigger_deployment(app, user, deployment_type="config"):
     # if app status is created and no last deployment exists
     if app.status == "created":
         return
-    #TODO: if app status is created and last deployment failed, trigger a new code deployment
-    last_deployment = Deployment.objects.filter(app=app, type__in=["code", "config"], status="success").latest(
-        "created_at"
-    )
+    # TODO: if app status is created and last deployment failed, trigger a new code deployment
+    last_deployment = Deployment.objects.filter(
+        app=app, type__in=["code", "config"], status="success"
+    ).latest("created_at")
     # TODO: what to do if last_deployment doesn't exist
-    deployment = Deployment.objects.create(user=user, app=app, type=deployment_type, ref=last_deployment.ref)
+    deployment = Deployment.objects.create(
+        user=user, app=app, type=deployment_type, ref=last_deployment.ref
+    )
     run_deploy_pipeline(deployment)
     app.status = "building"
     app.save()
@@ -63,13 +65,31 @@ def create_env_vars(app_service):
             )
     else:
         if service.type in ["mongodb", "postgres", "mysql"]:
-            EnvVar.objects.create(key="DB_HOST", value=f"{service.service_statefulset}", app=app, service=service)
-            EnvVar.objects.create(key="DB_NAME", value="shapeblock", app=app, service=service)
-            EnvVar.objects.create(key="DB_USER", value="shapeblock", app=app, service=service)
-            EnvVar.objects.create(key="DB_PASSWORD", value="shapeblock", app=app, service=service)
+            EnvVar.objects.create(
+                key="DB_HOST",
+                value=f"{service.service_statefulset}",
+                app=app,
+                service=service,
+            )
+            EnvVar.objects.create(
+                key="DB_NAME", value="shapeblock", app=app, service=service
+            )
+            EnvVar.objects.create(
+                key="DB_USER", value="shapeblock", app=app, service=service
+            )
+            EnvVar.objects.create(
+                key="DB_PASSWORD", value="shapeblock", app=app, service=service
+            )
         if service.type == "redis":
-            EnvVar.objects.create(key="REDIS_HOST", value=f"{service.service_statefulset}", app=app, service=service)
-            EnvVar.objects.create(key="REDIS_PASSWORD", value="shapeblock", app=app, service=service)
+            EnvVar.objects.create(
+                key="REDIS_HOST",
+                value=f"{service.service_statefulset}",
+                app=app,
+                service=service,
+            )
+            EnvVar.objects.create(
+                key="REDIS_PASSWORD", value="shapeblock", app=app, service=service
+            )
 
 
 def delete_env_vars(app_service):
@@ -88,7 +108,8 @@ def generate_ecdsa_keys():
         encryption_algorithm=serialization.NoEncryption(),
     )
     public_key_pem = public_key.public_bytes(
-        encoding=serialization.Encoding.OpenSSH, format=serialization.PublicFormat.OpenSSH
+        encoding=serialization.Encoding.OpenSSH,
+        format=serialization.PublicFormat.OpenSSH,
     )
     return private_key_pem.decode(), public_key_pem.decode()
 
@@ -104,7 +125,9 @@ def add_github_deploy_key(app: App):
     if protocol != "git":
         return
     private_key, public_key = generate_ecdsa_keys()
-    key_id = github.add_deploy_key(repo, f"Added by SB for application {app.name}", public_key)
+    key_id = github.add_deploy_key(
+        repo, f"Added by SB for application {app.name}", public_key
+    )
     app.key_config = {
         "public_key": public_key,
         "private_key": private_key,
@@ -125,7 +148,9 @@ def add_github_webhook(app: App):
     if protocol != "git":
         return
     webhook_config = {"url": f"{settings.SB_URL}/webhook/", "content_type": "json"}
-    hook = repo.create_hook(name="web", config=webhook_config, events=["push"], active=True)
+    hook = repo.create_hook(
+        name="web", config=webhook_config, events=["push"], active=True
+    )
 
     logger.info(f"Webhook created with id: {hook.id} for app {app.name}.")
     app.autodeploy = True
@@ -150,12 +175,16 @@ def trigger_deploy_from_github_webhook(request_headers, body):
     fullname_ref = body.get("ref")
     ref = fullname_ref.split("/")[-1]
     if app.ref != ref:
-        logger.info(f"Webhook ref {ref} doesn't match the ref '{app.ref}' configured in app.")
+        logger.info(
+            f"Webhook ref {ref} doesn't match the ref '{app.ref}' configured in app."
+        )
         return
     delivery_id = request_headers.get("X-GitHub-Delivery")
     sha = body.get("after")
     if sha:
-        deployment = Deployment.objects.create(user=app.user, app=app, type="code", ref=sha)
+        deployment = Deployment.objects.create(
+            user=app.user, app=app, type="code", ref=sha
+        )
         run_deploy_pipeline(deployment)
         app.status = "building"
         app.save()
@@ -163,15 +192,17 @@ def trigger_deploy_from_github_webhook(request_headers, body):
 
 
 def get_kubeconfig():
-    with open('/var/run/secrets/kubernetes.io/serviceaccount/ca.crt', 'r') as ca_crt_file:
+    with open(
+        "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt", "r"
+    ) as ca_crt_file:
         ca_crt = ca_crt_file.read()
 
-    with open('/var/run/secrets/kubernetes.io/serviceaccount/token', 'r') as token_file:
+    with open("/var/run/secrets/kubernetes.io/serviceaccount/token", "r") as token_file:
         token = token_file.read()
 
     external_kube_api_url = settings.CONTROL_PLANE_IP
 
-    base64_ca_crt = base64.b64encode(ca_crt.encode('utf-8')).decode('utf-8')
+    base64_ca_crt = base64.b64encode(ca_crt.encode("utf-8")).decode("utf-8")
     kubeconfig = f"""
 apiVersion: v1
 kind: Config

@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+
 class AddUserGithubTokenAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -15,14 +16,19 @@ class AddUserGithubTokenAPIView(APIView):
         user = request.user
         data = request.data
 
-        github_token = data.get('github_token', None)
+        github_token = data.get("github_token", None)
 
         if github_token:
             user.github_token = github_token
             user.save()
-            return Response({'detail': 'Github token updated successfully.'}, status=status.HTTP_200_OK)
+            return Response(
+                {"detail": "Github token updated successfully."},
+                status=status.HTTP_200_OK,
+            )
         else:
-            return Response({'detail': 'Invalid input.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Invalid input."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class GithubClientInfoAPIView(APIView):
@@ -30,7 +36,7 @@ class GithubClientInfoAPIView(APIView):
 
     def get(self, request, *args, **kwargs):
         data = {
-            'client_id': settings.GITHUB_CLIENT_KEY,
-            'secret': settings.GITHUB_CLIENT_SECRET,
+            "client_id": settings.GITHUB_CLIENT_KEY,
+            "secret": settings.GITHUB_CLIENT_SECRET,
         }
         return Response(data)

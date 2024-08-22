@@ -85,7 +85,9 @@ def is_statefulset_ready(service: Service):
 
     try:
         # Get the specified StatefulSet
-        statefulset = api_instance.read_namespaced_stateful_set(service.service_statefulset, namespace)
+        statefulset = api_instance.read_namespaced_stateful_set(
+            service.service_statefulset, namespace
+        )
 
         # Check if the number of ready replicas matches the desired count
         desired_replicas = statefulset.spec.replicas

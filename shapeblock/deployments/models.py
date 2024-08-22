@@ -5,6 +5,7 @@ from shapeblock.utils.models import OwnedModel
 
 from shapeblock.apps.models import App
 
+
 class Deployment(OwnedModel):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -25,14 +25,17 @@ env.read_env(os.path.join(BASE_DIR, ".env.sb"))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
-SECRET_KEY = env("SECRET_KEY", default="django-insecure-j)s)xyusi2r^2)*%0i*n7)as+eba3)zh1^&3*y21o4^pv&z3wd")
+SECRET_KEY = env(
+    "SECRET_KEY",
+    default="django-insecure-j)s)xyusi2r^2)*%0i*n7)as+eba3)zh1^&3*y21o4^pv&z3wd",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG", True)
 
-TEST_RUN = env.bool('TEST_RUN', False) and DEBUG
+TEST_RUN = env.bool("TEST_RUN", False) and DEBUG
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS",default=["*"])
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
 
 
 # Application definition
@@ -51,7 +54,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "rest_framework",
     "rest_framework.authtoken",
-    'drf_spectacular',
+    "drf_spectacular",
     # custom
     "shapeblock.authentication.apps.AuthenticationConfig",
     "shapeblock.projects.apps.ProjectsConfig",
@@ -78,7 +81,7 @@ ROOT_URLCONF = "shapeblock.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, 'templates')],
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -145,9 +148,9 @@ AUTH_USER_MODEL = "authentication.CustomUser"
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, "static"),
 ]
 
 # Default primary key field type
@@ -188,7 +191,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
     ],
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 
@@ -218,10 +221,10 @@ CHART_VERSION = env("CHART_VERSION", default="0.2.0")
 # DRF spectacular
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'ShapeBlock',
-    'DESCRIPTION': 'ShapeBlock API',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
+    "TITLE": "ShapeBlock",
+    "DESCRIPTION": "ShapeBlock API",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
     # OTHER SETTINGS
 }
 
@@ -246,7 +249,7 @@ if DEBUG:
     # https://docs.djangoproject.com/en/dev/ref/settings/#email-port
     EMAIL_PORT = 1025
 else:
-    ACCOUNT_DEFAULT_HTTP_PROTOCOL='https'
+    ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
     # Django security checklist settings.
@@ -258,5 +261,5 @@ else:
 CLUSTER_DOMAIN = env("CLUSTER_DOMAIN", default="example.com")
 
 
-FERNET_KEYS = env.list('FERNET_KEYS')
-CONTROL_PLANE_IP = env('CONTROL_PLANE_IP')
+FERNET_KEYS = env.list("FERNET_KEYS")
+CONTROL_PLANE_IP = env("CONTROL_PLANE_IP")

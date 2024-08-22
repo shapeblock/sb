@@ -4,37 +4,41 @@ from .models import Deployment
 from shapeblock.apps.models import App, EnvVar, Secret, BuildVar, Volume
 from shapeblock.apps.git.common import get_commit_sha
 
+
 class DeploymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Deployment
-        fields = ['uuid', 'created_at', 'status', 'ref', 'params', 'user']
+        fields = ["uuid", "created_at", "status", "ref", "params", "user"]
 
     user = serializers.PrimaryKeyRelatedField(
-        read_only=True,
-        default=serializers.CurrentUserDefault()
+        read_only=True, default=serializers.CurrentUserDefault()
     )
 
     def create(self, validated_data):
-        validated_data['user'] = self.context['request'].user
-        app = validated_data['app']
+        validated_data["user"] = self.context["request"].user
+        app = validated_data["app"]
         # create params
         params = {
-            'env_vars': self.get_env_vars(app),
-            'secrets': self.get_secrets(app),
-            'build_vars': self.get_build_vars(app),
-            'volumes': self.get_volumes(app),
+            "env_vars": self.get_env_vars(app),
+            "secrets": self.get_secrets(app),
+            "build_vars": self.get_build_vars(app),
+            "volumes": self.get_volumes(app),
         }
-        validated_data['params'] = params
+        validated_data["params"] = params
         # check if previous deployment failed
         # check if params are same
         # check if last commit is same
         new_ref = get_commit_sha(app.repo, app.ref, app.user, "github")
-        validated_data['ref'] = new_ref
-        last_deployment = Deployment.objects.filter(app=app).order_by('-created_at').first()
+        validated_data["ref"] = new_ref
+        last_deployment = (
+            Deployment.objects.filter(app=app).order_by("-created_at").first()
+        )
         if last_deployment:
-            conditions_met = last_deployment.status == 'failed' or \
-                              not deep_dict_compare(last_deployment.params, params) or \
-                              last_deployment.ref != new_ref
+            conditions_met = (
+                last_deployment.status == "failed"
+                or not deep_dict_compare(last_deployment.params, params)
+                or last_deployment.ref != new_ref
+            )
         else:
             # If there is no last deployment, proceed to create a new one
             conditions_met = True
@@ -44,9 +48,10 @@ class DeploymentSerializer(serializers.ModelSerializer):
             # If any condition is met, create and return the new Deployment instance
             return super().create(validated_data)
         else:
-            raise serializers.ValidationError("Deployment conditions not met, deployment not created.")
+            raise serializers.ValidationError(
+                "Deployment conditions not met, deployment not created."
+            )
         return None
-
 
     def get_env_vars(self, app):
         env_vars = EnvVar.objects.filter(app=app)
@@ -62,20 +67,20 @@ class DeploymentSerializer(serializers.ModelSerializer):
 
     def get_volumes(self, app):
         volumes = Volume.objects.filter(app=app)
-        return [{ 'name': volume.name, 'mount_path': volume.mount_path, 'size': volume.size } for volume in volumes]
-
+        return [
+            {"name": volume.name, "mount_path": volume.mount_path, "size": volume.size}
+            for volume in volumes
+        ]
 
 
 class DeploymentReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Deployment
-        fields = ['uuid', 'created_at', 'status', 'ref', 'params', 'user', 'log']
+        fields = ["uuid", "created_at", "status", "ref", "params", "user", "log"]
 
     user = serializers.PrimaryKeyRelatedField(
-        read_only=True,
-        default=serializers.CurrentUserDefault()
+        read_only=True, default=serializers.CurrentUserDefault()
     )
-
 
 
 def deep_dict_compare(d1, d2):

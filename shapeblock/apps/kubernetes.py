@@ -7,11 +7,21 @@ from kubernetes.client.rest import ApiException
 from django.template.loader import render_to_string
 from django.conf import settings
 
-from .models import App, EnvVar, Secret, Volume, BuildVar, InitProcess, WorkerProcess, CustomDomain
+from .models import (
+    App,
+    EnvVar,
+    Secret,
+    Volume,
+    BuildVar,
+    InitProcess,
+    WorkerProcess,
+    CustomDomain,
+)
 from shapeblock.deployments.models import Deployment
 from .mapper.validator import version_enum
 
 logger = logging.getLogger("django")
+
 
 def get_app_pod(app: App):
     config.load_incluster_config()
@@ -33,18 +43,28 @@ def create_app_secret(app: App):
     if not app.key_config:
         return
     annotation = app.key_config.get("annotation")
-    metadata = {"name": f"{app.name}-ssh", "namespace": namespace, "annotations": {"kpack.io/git": annotation}}
+    metadata = {
+        "name": f"{app.name}-ssh",
+        "namespace": namespace,
+        "annotations": {"kpack.io/git": annotation},
+    }
     private_key = app.key_config["private_key"]
     string_data = {"ssh-privatekey": private_key}
     body = client.V1Secret(
-        api_version="v1", string_data=string_data, kind="Secret", metadata=metadata, type="kubernetes.io/ssh-auth"
+        api_version="v1",
+        string_data=string_data,
+        kind="Secret",
+        metadata=metadata,
+        type="kubernetes.io/ssh-auth",
     )
     try:
         logger.debug(body)
         api_response = v1.create_namespaced_secret(namespace, body)
     except ApiException as error:
         logger.error(error)
-        logger.error(f"Unable to create secret for app {app.name} in project {app.project.name}.")
+        logger.error(
+            f"Unable to create secret for app {app.name} in project {app.project.name}."
+        )
         return
 
 

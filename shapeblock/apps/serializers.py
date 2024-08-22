@@ -1,98 +1,145 @@
 from rest_framework import serializers
 
-from .models import App, EnvVar, Secret, BuildVar, Volume,CustomDomain, InitProcess, WorkerProcess
+from .models import (
+    App,
+    EnvVar,
+    Secret,
+    BuildVar,
+    Volume,
+    CustomDomain,
+    InitProcess,
+    WorkerProcess,
+)
 from shapeblock.projects.models import Project
 from shapeblock.services.models import Service
 
-class ServiceRefSerializer(serializers.ModelSerializer):
 
+class ServiceRefSerializer(serializers.ModelSerializer):
     class Meta:
         model = Service
-        fields = ['uuid', 'name', 'type']
+        fields = ["uuid", "name", "type"]
+
 
 class CustomDomainSerializer(serializers.ModelSerializer):
     class Meta:
-        model=CustomDomain
-        fields=['id','domain']
+        model = CustomDomain
+        fields = ["id", "domain"]
 
 
 class AppSerializer(serializers.ModelSerializer):
     class Meta:
         model = App
-        fields = ["project", "uuid", "name", "stack", "repo", "ref","status","sub_path","user"]
+        fields = [
+            "project",
+            "uuid",
+            "name",
+            "stack",
+            "repo",
+            "ref",
+            "status",
+            "sub_path",
+            "user",
+        ]
 
     user = serializers.PrimaryKeyRelatedField(
-        read_only=True,
-        default=serializers.CurrentUserDefault()
+        read_only=True, default=serializers.CurrentUserDefault()
     )
 
     project = serializers.PrimaryKeyRelatedField(
-      queryset=Project.objects.none(),
+        queryset=Project.objects.none(),
     )
 
     def __init__(self, *args, **kwargs):
         super(AppSerializer, self).__init__(*args, **kwargs)
-        request = self.context.get('request')
+        request = self.context.get("request")
 
         if request and hasattr(request, "user"):
-            self.fields['project'].queryset = Project.objects.filter(user=request.user)
+            self.fields["project"].queryset = Project.objects.filter(user=request.user)
 
     def create(self, validated_data):
-        validated_data['user'] = self.context['request'].user
+        validated_data["user"] = self.context["request"].user
         return super().create(validated_data)
+
 
 class InitProcessSerializer(serializers.Serializer):
     pass
 
+
 class EnvVarSerializer(serializers.ModelSerializer):
     class Meta:
         model = EnvVar
-        fields = ['id', 'key', 'value', 'service']
+        fields = ["id", "key", "value", "service"]
 
     service = serializers.PrimaryKeyRelatedField(
-        read_only=True,
-        default=serializers.CurrentUserDefault()
+        read_only=True, default=serializers.CurrentUserDefault()
     )
 
 
 class SecretSerializer(serializers.ModelSerializer):
     class Meta:
         model = Secret
-        fields = ['id', 'key', 'value']
+        fields = ["id", "key", "value"]
+
 
 class BuildVarSerializer(serializers.ModelSerializer):
     class Meta:
         model = BuildVar
-        fields = ['id', 'key', 'value']
+        fields = ["id", "key", "value"]
+
 
 class VolumeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Volume
-        fields = ['id', 'name', 'mount_path', 'size']
+        fields = ["id", "name", "mount_path", "size"]
+
 
 class InitProcessSerializer(serializers.ModelSerializer):
     class Meta:
         model = InitProcess
-        fields = ['id', 'key']
+        fields = ["id", "key"]
+
 
 class WorkerProcessSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkerProcess
-        fields = ['id', 'key', 'memory', 'cpu']
+        fields = ["id", "key", "memory", "cpu"]
+
 
 class ProjectReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
-        fields = ['display_name', 'uuid']
+        fields = ["display_name", "uuid"]
 
 
 class AppReadSerializer(serializers.ModelSerializer):
-
     domain = serializers.SerializerMethodField()
 
     class Meta:
         model = App
-        fields = ["project", "uuid", "name", "stack", "repo", "ref", "sub_path", "user", "env_vars", "build_vars", "volumes", "created_at", "status", "domain", "secrets", "services", "custom_domains", "init_processes", "workers", "has_liveness_probe", "replicas", "autodeploy"]
+        fields = [
+            "project",
+            "uuid",
+            "name",
+            "stack",
+            "repo",
+            "ref",
+            "sub_path",
+            "user",
+            "env_vars",
+            "build_vars",
+            "volumes",
+            "created_at",
+            "status",
+            "domain",
+            "secrets",
+            "services",
+            "custom_domains",
+            "init_processes",
+            "workers",
+            "has_liveness_probe",
+            "replicas",
+            "autodeploy",
+        ]
 
     project = ProjectReadSerializer(required=True)
 
@@ -115,8 +162,8 @@ class AppReadSerializer(serializers.ModelSerializer):
     def get_domain(self, obj):
         return obj.domain
 
-class AppRefSerializer(serializers.ModelSerializer):
 
+class AppRefSerializer(serializers.ModelSerializer):
     class Meta:
         model = App
         fields = ["uuid", "name"]

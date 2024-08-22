@@ -22,6 +22,7 @@ from shapeblock.apps.utils import get_kubeconfig
 
 logger = logging.getLogger("django")
 
+
 class DeploymentListCreateAPIView(ListCreateAPIView):
     serializer_class = DeploymentSerializer
 
@@ -30,7 +31,7 @@ class DeploymentListCreateAPIView(ListCreateAPIView):
         This view should return a list of all the Deployments
         for the currently specified app by filtering against `app_id` in the URL.
         """
-        app_id = self.kwargs['app_uuid']
+        app_id = self.kwargs["app_uuid"]
         app = get_object_or_404(App, uuid=app_id)
         return Deployment.objects.filter(app=app)
 
@@ -38,7 +39,7 @@ class DeploymentListCreateAPIView(ListCreateAPIView):
         """
         Create a new Deployment instance, ensuring it's associated with the specified app.
         """
-        app_id = self.kwargs['app_uuid']
+        app_id = self.kwargs["app_uuid"]
         app = get_object_or_404(App, uuid=app_id)
         deployment = serializer.save(app=app)
         # TODO: check for same ref deploy
@@ -52,10 +53,12 @@ class DeploymentListCreateAPIView(ListCreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-        return Response({'uuid': serializer.instance.uuid}, status=status.HTTP_201_CREATED)
+        return Response(
+            {"uuid": serializer.instance.uuid}, status=status.HTTP_201_CREATED
+        )
 
     def list(self, request, *args, **kwargs):
-        deployments = self.get_queryset().order_by('-created_at')
+        deployments = self.get_queryset().order_by("-created_at")
         serializer = DeploymentReadSerializer(deployments, many=True)
         return Response(serializer.data)
 
@@ -73,7 +76,7 @@ class UpdateDeploymentView(View):
                 {},
                 status=202,
             )
-        pod_name = data.get('pod')
+        pod_name = data.get("pod")
         if pod_name:
             deployment.pod = pod_name
         deployment.status = data["status"]
@@ -92,22 +95,25 @@ class UpdateDeploymentView(View):
 
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
-            f'deployment_{deployment.uuid}',
+            f"deployment_{deployment.uuid}",
             {
-                'type': 'deploy_logs',
-                'data': {"log": data["logs"], "status": data["status"]}
-            }
+                "type": "deploy_logs",
+                "data": {"log": data["logs"], "status": data["status"]},
+            },
         )
 
         # Update websocket inf deployment is finished
         if deployment.status in ["failed", "success"]:
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
-                f'apps',
+                f"apps",
                 {
-                    'type': 'app_status_message',
-                    'data': {"uuid": str(deployment.app.uuid), "status": deployment.app.status}
-                }
+                    "type": "app_status_message",
+                    "data": {
+                        "uuid": str(deployment.app.uuid),
+                        "status": deployment.app.status,
+                    },
+                },
             )
 
         return JsonResponse(
@@ -115,17 +121,18 @@ class UpdateDeploymentView(View):
             status=200,
         )
 
+
 class PodInfoView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, deployment_uuid, *args, **kwargs):
         deployment = get_object_or_404(Deployment, uuid=deployment_uuid)
         kubeconfig = get_kubeconfig()
-        kubeconfig_bytes = base64.b64encode(kubeconfig.encode('utf-8'))
+        kubeconfig_bytes = base64.b64encode(kubeconfig.encode("utf-8"))
         response_data = {
-            'name': deployment.pod,
-            'kubeconfig': kubeconfig_bytes.decode('utf-8'),
-            'namespace': deployment.app.project.name
+            "name": deployment.pod,
+            "kubeconfig": kubeconfig_bytes.decode("utf-8"),
+            "namespace": deployment.app.project.name,
         }
         logger.debug(response_data)
         return Response(response_data)

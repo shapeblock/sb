@@ -19,15 +19,20 @@ from fernet_fields import EncryptedCharField
 class SBYmlNotFound(Exception):
     pass
 
+
 class ServiceQuotaExceededException(Exception):
     pass
+
 
 class InvalidSBYml(Exception):
     def __init__(self, errors):
         self.errors = errors
 
 
-AppNameValidator = RegexValidator(r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$", "Only alphanumeric characters and - are allowed.")
+AppNameValidator = RegexValidator(
+    r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$",
+    "Only alphanumeric characters and - are allowed.",
+)
 
 
 class App(BaseModel, OwnedModel):
@@ -76,7 +81,9 @@ class App(BaseModel, OwnedModel):
 
     has_liveness_probe = models.BooleanField(default=True)
 
-    replicas = models.PositiveSmallIntegerField(default=1, validators=[MaxValueValidator(6)], null=False)
+    replicas = models.PositiveSmallIntegerField(
+        default=1, validators=[MaxValueValidator(6)], null=False
+    )
 
     def __str__(self):
         return self.name
@@ -88,7 +95,6 @@ class App(BaseModel, OwnedModel):
     @property
     def domain(self):
         return f"https://{self.project.name}-{self.name}.{settings.CLUSTER_DOMAIN}"
-
 
     def get_repo_details(self):
         match = re.match(GIT_REGEX, self.repo).groupdict()
@@ -150,21 +156,26 @@ class App(BaseModel, OwnedModel):
 
 
 EnvVarNameValidator = RegexValidator(
-    r"^[A-Za-z0-9]([_A-Za-z0-9]*[A-Za-z0-9])?$", "Only alphanumeric characters and _ are allowed."
+    r"^[A-Za-z0-9]([_A-Za-z0-9]*[A-Za-z0-9])?$",
+    "Only alphanumeric characters and _ are allowed.",
 )
 
 DomainNameValidator = RegexValidator(
-    r"^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$", "Please give a valid domain name."
+    r"^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$",
+    "Please give a valid domain name.",
 )
+
 
 class EnvVar(models.Model):
     key = models.CharField(null=False, max_length=100, validators=[EnvVarNameValidator])
     value = models.CharField(null=False, max_length=200)
-    app = models.ForeignKey(App, on_delete=models.CASCADE, related_name='env_vars')
-    service = models.ForeignKey("services.Service", on_delete=models.CASCADE, null=True, blank=True)
+    app = models.ForeignKey(App, on_delete=models.CASCADE, related_name="env_vars")
+    service = models.ForeignKey(
+        "services.Service", on_delete=models.CASCADE, null=True, blank=True
+    )
 
     class Meta:
-        unique_together = ('key', 'app')
+        unique_together = ("key", "app")
 
     def __str__(self):
         return f"{self.key}-{self.app}"
@@ -173,10 +184,10 @@ class EnvVar(models.Model):
 class Secret(models.Model):
     key = models.CharField(null=False, max_length=100, validators=[EnvVarNameValidator])
     value = EncryptedCharField(null=False, max_length=200)
-    app = models.ForeignKey(App, on_delete=models.CASCADE, related_name='secrets')
+    app = models.ForeignKey(App, on_delete=models.CASCADE, related_name="secrets")
 
     class Meta:
-        unique_together = ('key', 'app')
+        unique_together = ("key", "app")
 
     def __str__(self):
         return f"{self.key}-{self.app}"
@@ -185,9 +196,10 @@ class Secret(models.Model):
 class BuildVar(models.Model):
     key = models.CharField(null=False, max_length=100, validators=[EnvVarNameValidator])
     value = models.CharField(null=False, max_length=200)
-    app = models.ForeignKey(App, on_delete=models.CASCADE, related_name='build_vars')
+    app = models.ForeignKey(App, on_delete=models.CASCADE, related_name="build_vars")
+
     class Meta:
-        unique_together = ('key', 'app')
+        unique_together = ("key", "app")
 
     def __str__(self):
         return f"{self.key}-{self.app}"
@@ -197,7 +209,9 @@ class InitProcess(models.Model):
     key = models.CharField(null=False, max_length=100, validators=[AppNameValidator])
     memory = models.CharField(null=False, max_length=5, default="512Mi")
     cpu = models.CharField(null=False, max_length=5, default="500m")
-    app = models.ForeignKey(App, on_delete=models.CASCADE, related_name='init_processes')
+    app = models.ForeignKey(
+        App, on_delete=models.CASCADE, related_name="init_processes"
+    )
 
     def __str__(self):
         return f"{self.key}-{self.app}"
@@ -208,10 +222,10 @@ class InitProcess(models.Model):
 
 class WorkerProcess(models.Model):
     key = models.CharField(null=False, max_length=100, validators=[AppNameValidator])
-    #TODO: add a memory and CPU validator
+    # TODO: add a memory and CPU validator
     memory = models.CharField(null=False, max_length=5, default="1Gi")
     cpu = models.CharField(null=False, max_length=5, default="1000m")
-    app = models.ForeignKey(App, on_delete=models.CASCADE, related_name='workers')
+    app = models.ForeignKey(App, on_delete=models.CASCADE, related_name="workers")
 
     def __str__(self):
         return f"{self.key}-{self.app}"
@@ -224,24 +238,34 @@ class Volume(models.Model):
     name = models.CharField(null=False, max_length=100, validators=[AppNameValidator])
     mount_path = models.CharField(
         max_length=1024,
-        validators=[RegexValidator(regex=r"^/workspace/.+", message="Path must start with /workspace")],
+        validators=[
+            RegexValidator(
+                regex=r"^/workspace/.+", message="Path must start with /workspace"
+            )
+        ],
     )
-    app = models.ForeignKey(App, on_delete=models.CASCADE, related_name='volumes')
-    size = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], default=2, null=False)
+    app = models.ForeignKey(App, on_delete=models.CASCADE, related_name="volumes")
+    size = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)], default=2, null=False
+    )
 
     class Meta:
-        unique_together = ("name", "mount_path","size","app")
+        unique_together = ("name", "mount_path", "size", "app")
 
     def __str__(self):
         return self.name
 
 
 class CustomDomain(models.Model):
-    domain = models.CharField(null=False, max_length=100, validators=[DomainNameValidator])
-    app = models.ForeignKey(App, on_delete=models.CASCADE, related_name='custom_domains')
+    domain = models.CharField(
+        null=False, max_length=100, validators=[DomainNameValidator]
+    )
+    app = models.ForeignKey(
+        App, on_delete=models.CASCADE, related_name="custom_domains"
+    )
 
     class Meta:
-        unique_together = ('domain', 'app')
+        unique_together = ("domain", "app")
 
     def __str__(self):
         return f"{self.domain}-{self.app}"

@@ -21,7 +21,11 @@ def validate_yaml(yaml_str):
         yaml_data = yaml.safe_load(yaml_str)
         validator = Draft202012Validator(schema)
         validator.validate(yaml_data)
-        if "type" in yaml_data and "version" in yaml_data and yaml_data["type"] in version_enum.keys():
+        if (
+            "type" in yaml_data
+            and "version" in yaml_data
+            and yaml_data["type"] in version_enum.keys()
+        ):
             if yaml_data["version"] not in str(version_enum[yaml_data["type"]]):
                 version_mismatch_error = f"Invalid version for {yaml_data['type']}. Only the following versions are supported: {version_enum[yaml_data['type']]}"
                 validation_errors.append(version_mismatch_error)

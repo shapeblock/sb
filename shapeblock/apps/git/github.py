@@ -44,14 +44,22 @@ def get_user_repos(token, query, owner=None):
     if owner:
         login = owner
     orgs = user.get_orgs()
-    user_search_results = gh.search_repositories(query=f"{query} user:{login} fork:true")
+    user_search_results = gh.search_repositories(
+        query=f"{query} user:{login} fork:true"
+    )
     org_search_results = [
-        gh.search_repositories(query=f"{query} user:{login} org:{org.login} fork:true") for org in orgs
+        gh.search_repositories(query=f"{query} user:{login} org:{org.login} fork:true")
+        for org in orgs
     ]
     search_results = [user_search_results] + org_search_results
     results = []
     [
-        results.extend([{"id": repo.id, "url": repo.ssh_url, "full_name": repo.full_name} for repo in search_result])
+        results.extend(
+            [
+                {"id": repo.id, "url": repo.ssh_url, "full_name": repo.full_name}
+                for repo in search_result
+            ]
+        )
         for search_result in search_results
     ]
     # make results unique

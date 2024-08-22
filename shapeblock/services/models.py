@@ -9,12 +9,15 @@ from shapeblock.projects.models import Project
 from shapeblock.apps.models import App
 
 ServiceNameValidator = RegexValidator(
-    r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$", "Only alphanumeric characters and - are allowed."
+    r"^[a-z0-9]([-a-z0-9]*[a-z0-9])?$",
+    "Only alphanumeric characters and - are allowed.",
 )
 
 
 class Service(BaseModel, OwnedModel):
-    name = models.CharField(null=False, max_length=50, validators=[ServiceNameValidator])
+    name = models.CharField(
+        null=False, max_length=50, validators=[ServiceNameValidator]
+    )
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
 
     STATUS_CHOICES = (
@@ -61,7 +64,7 @@ class Service(BaseModel, OwnedModel):
 
 
 class AppService(models.Model):
-    app = models.ForeignKey(App, on_delete=models.CASCADE,related_name='service')
+    app = models.ForeignKey(App, on_delete=models.CASCADE, related_name="service")
     service = models.ForeignKey(Service, on_delete=models.CASCADE)
 
     EXPOSED_AS_CHOICES = (

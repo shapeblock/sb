@@ -4,21 +4,47 @@ from shapeblock.apps.views import CustomDomainView, InitProcessView, WorkerProce
 from shapeblock.deployments.views import DeploymentListCreateAPIView
 
 urlpatterns = [
-    path('', views.AppViewSet.as_view({
-        'get': 'list',
-        'post': 'create',
-    }), name='app-list'),
-    path('<uuid:uuid>/', views.AppViewSet.as_view({
-        'get': 'retrieve',
-        'delete': 'destroy',
-        'patch': 'patch',
-    }), name='app-detail'),
-    path('<uuid:uuid>/env-vars/', views.AppEnvVarAPIView.as_view(), name='app-env-vars'),
-    path('<uuid:uuid>/build-vars/', views.AppBuildVarsAPIView.as_view(), name='app-build-vars'),
-    path('<uuid:uuid>/secrets/', views.AppSecretAPIView.as_view(), name='app-secrets'),
-    path('<uuid:uuid>/volumes/', views.VolumesAPIView.as_view(), name='app-volumes'),
-    path('<uuid:app_uuid>/deployments/', DeploymentListCreateAPIView.as_view(), name='deployment-list-create'),
-    path('<uuid:app_uuid>/custom-domains/', CustomDomainView.as_view(), name='custom-domain'),
-    path('<uuid:uuid>/init-process/', InitProcessView.as_view(), name='init-process'),
-    path('<uuid:uuid>/worker/', WorkerProcessView.as_view(), name='worker'),
+    path(
+        "",
+        views.AppViewSet.as_view(
+            {
+                "get": "list",
+                "post": "create",
+            }
+        ),
+        name="app-list",
+    ),
+    path(
+        "<uuid:uuid>/",
+        views.AppViewSet.as_view(
+            {
+                "get": "retrieve",
+                "delete": "destroy",
+                "patch": "patch",
+            }
+        ),
+        name="app-detail",
+    ),
+    path(
+        "<uuid:uuid>/env-vars/", views.AppEnvVarAPIView.as_view(), name="app-env-vars"
+    ),
+    path(
+        "<uuid:uuid>/build-vars/",
+        views.AppBuildVarsAPIView.as_view(),
+        name="app-build-vars",
+    ),
+    path("<uuid:uuid>/secrets/", views.AppSecretAPIView.as_view(), name="app-secrets"),
+    path("<uuid:uuid>/volumes/", views.VolumesAPIView.as_view(), name="app-volumes"),
+    path(
+        "<uuid:app_uuid>/deployments/",
+        DeploymentListCreateAPIView.as_view(),
+        name="deployment-list-create",
+    ),
+    path(
+        "<uuid:app_uuid>/custom-domains/",
+        CustomDomainView.as_view(),
+        name="custom-domain",
+    ),
+    path("<uuid:uuid>/init-process/", InitProcessView.as_view(), name="init-process"),
+    path("<uuid:uuid>/worker/", WorkerProcessView.as_view(), name="worker"),
 ]
