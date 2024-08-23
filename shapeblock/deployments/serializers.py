@@ -3,6 +3,7 @@ from rest_framework import serializers
 from .models import Deployment
 from shapeblock.apps.models import App, EnvVar, Secret, BuildVar, Volume
 from shapeblock.apps.git.common import get_commit_sha
+from github import GithubException
 
 
 class DeploymentSerializer(serializers.ModelSerializer):
@@ -25,10 +26,15 @@ class DeploymentSerializer(serializers.ModelSerializer):
             "volumes": self.get_volumes(app),
         }
         validated_data["params"] = params
+        # TODO:
         # check if previous deployment failed
         # check if params are same
         # check if last commit is same
-        new_ref = get_commit_sha(app.repo, app.ref, app.user, "github")
+        try:
+            new_ref = get_commit_sha(app.repo, app.ref, app.user, "github")
+        except GithubException as e:
+            raise serializers.ValidationError(f"GitHub API Error: {str(e)}")
+
         validated_data["ref"] = new_ref
         last_deployment = (
             Deployment.objects.filter(app=app).order_by("-created_at").first()
