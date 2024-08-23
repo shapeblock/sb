@@ -1,3 +1,4 @@
+import logging
 from github import Github, GithubException, UnknownObjectException
 from django.core.exceptions import ValidationError
 from django.conf import settings
@@ -17,14 +18,35 @@ from .models import (
 from shapeblock.projects.models import Project
 from shapeblock.services.models import Service
 
+logger = logging.getLogger("django")
 
-def validate_github_repo_and_branch(url, branch, user_github_token):
+
+def extract_github_org_repo(url):
     parsed_url = urlparse(url)
     if parsed_url.netloc != "github.com":
         raise ValidationError("Invalid GitHub URL.")
 
-    repo_path = parsed_url.path.strip("/").rstrip(".git")
+    if parsed_url.scheme in ["http", "https"]:
+        # HTTPS format: https://github.com/org/repo.git
+        path_parts = parsed_url.path.strip("/").split("/")
+    elif parsed_url.scheme == "" and parsed_url.netloc == "":
+        # SSH format: git@github.com:org/repo.git
+        path_parts = url.split(":")[-1].strip("/").split("/")
+    else:
+        raise ValidationError("Invalid GitHub URL format.")
 
+    if len(path_parts) != 2:
+        raise ValidationError("Invalid GitHub URL format.")
+
+    org_name, repo_name = path_parts
+    if repo_name.endswith(".git"):
+        repo_name = repo_name[:-4]
+
+    return f"{org_name}/{repo_name}"
+
+
+def validate_github_repo_and_branch(url, branch, user_github_token):
+    repo_path = extract_github_org_repo(url)
     if user_github_token:
         gh = Github(user_github_token)
     else:
@@ -33,7 +55,7 @@ def validate_github_repo_and_branch(url, branch, user_github_token):
         )  # Fallback to settings token for public repos only
 
     try:
-        print(repo_path)
+        logger.info(repo_path)
         try:
             repo = gh.get_repo(repo_path)
         except UnknownObjectException:
