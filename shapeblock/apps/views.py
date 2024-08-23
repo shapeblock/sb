@@ -33,7 +33,7 @@ from .serializers import (
     WorkerProcessSerializer,
 )
 from rest_framework.permissions import IsAuthenticated
-from .kubernetes import delete_app_task, create_app_secret
+from .kubernetes import delete_app_task, create_app_secret, run_deploy_pipeline
 from .kubernetes import delete_app_task, get_app_pod
 from .utils import (
     get_kubeconfig,
@@ -41,6 +41,7 @@ from .utils import (
     add_github_webhook,
     trigger_deploy_from_github_webhook,
 )
+from shapeblock.deployments.models import Deployment
 
 logger = logging.getLogger("django")
 
@@ -105,10 +106,20 @@ class AppScaleView(APIView):
         except App.DoesNotExist:
             return Response({"detail": "App not found."}, status=404)
 
+        if app.status == "building":
+            return Response("app is building, cannot scale", status=400)
+
         replicas = request.data.get("replicas")
         if replicas:
             app.replicas = int(replicas)
-        app.save()
+            deployment = Deployment.objects.create(
+                user=request.user,
+                app=app,
+                type="config",
+            )
+            app.status = "building"
+            app.save()
+            run_deploy_pipeline(deployment)
         serializer = AppReadSerializer(app)
         return Response(serializer.data)
 

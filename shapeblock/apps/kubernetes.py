@@ -86,11 +86,6 @@ def run_deploy_pipeline(deployment: Deployment):
         "name": app.name,
         "cluster_domain": settings.CLUSTER_DOMAIN,
         "namespace": app.project.name,
-        "git": {
-            "url": app.repo,
-            "revision": deployment.ref,
-            "sub_path": app.sub_path,
-        },
         # TODO: should this change on a per deployment basis?
         "chart_version": settings.CHART_VERSION,
         "replicas": app.replicas,
@@ -104,6 +99,13 @@ def run_deploy_pipeline(deployment: Deployment):
         "workers": WorkerProcess.objects.filter(app=app),
         "has_liveness_probe": app.has_liveness_probe,
     }
+    if deployment.type == "code":
+        sb_config["git"] = {
+            "url": app.repo,
+            "revision": deployment.ref,
+            "sub_path": app.sub_path,
+        }
+
     # TODO: derive other parameters from deployment. envs, docroot,
     if not sb_config.get("version"):
         stack = sb_config["type"]
